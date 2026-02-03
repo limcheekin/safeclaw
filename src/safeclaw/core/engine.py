@@ -130,9 +130,12 @@ class SafeClaw:
         # Execute the action
         if parsed.intent and parsed.intent in self.actions:
             try:
+                # Include raw input text in params for actions that need it
+                params_with_raw = dict(parsed.params)
+                params_with_raw["raw_input"] = text
                 result = await self._execute_action(
                     action=parsed.intent,
-                    params=parsed.params,
+                    params=params_with_raw,
                     user_id=user_id,
                     channel=channel,
                 )
