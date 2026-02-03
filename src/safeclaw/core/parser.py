@@ -138,6 +138,17 @@ PHRASE_VARIATIONS = {
 }
 
 
+# Patterns for detecting command chains
+# Order matters - more specific patterns first
+CHAIN_PATTERNS = [
+    (r'\s*\|\s*', 'pipe'),              # Unix-style pipe: "crawl url | summarize"
+    (r'\s*->\s*', 'pipe'),              # Arrow pipe: "crawl url -> summarize"
+    (r'\s+and\s+then\s+', 'sequence'),  # "crawl url and then summarize" (must be before "then")
+    (r'\s+then\s+', 'sequence'),        # "crawl url then summarize"
+    (r'\s*;\s*', 'sequence'),           # Semicolon: "crawl url; summarize"
+]
+
+
 @dataclass
 class ParsedCommand:
     """Result of parsing a user command."""
@@ -146,6 +157,16 @@ class ParsedCommand:
     confidence: float = 0.0
     params: dict[str, Any] = field(default_factory=dict)
     entities: dict[str, Any] = field(default_factory=dict)
+    # For command chaining
+    chain_type: Optional[str] = None  # 'pipe' or 'sequence' or None
+    use_previous_output: bool = False  # True if this command should receive previous output
+
+
+@dataclass
+class CommandChain:
+    """A chain of commands to execute in sequence."""
+    commands: list[ParsedCommand]
+    chain_type: str = "sequence"  # 'pipe' passes output, 'sequence' runs independently
 
 
 @dataclass
@@ -767,3 +788,85 @@ class CommandParser:
             "use_count": 1,
         })
         logger.info(f"Learned new pattern: '{phrase}' -> {correct_intent}")
+
+    def _detect_chain(self, text: str) -> Optional[tuple[str, str]]:
+        """
+        Detect if text contains a command chain pattern.
+
+        Returns tuple of (pattern, chain_type) or None if no chain detected.
+        """
+        for pattern, chain_type in CHAIN_PATTERNS:
+            if re.search(pattern, text, re.IGNORECASE):
+                return (pattern, chain_type)
+        return None
+
+    def _split_chain(self, text: str) -> tuple[list[str], str]:
+        """
+        Split text into chain segments.
+
+        Returns tuple of (segments, chain_type).
+        """
+        # Try each pattern in order
+        for pattern, chain_type in CHAIN_PATTERNS:
+            parts = re.split(pattern, text, flags=re.IGNORECASE)
+            if len(parts) > 1:
+                # Clean up parts and filter empty ones
+                segments = [p.strip() for p in parts if p.strip()]
+                if len(segments) > 1:
+                    return (segments, chain_type)
+
+        # No chain found - return single segment
+        return ([text], "none")
+
+    def parse_chain(
+        self, text: str, user_id: Optional[str] = None
+    ) -> CommandChain:
+        """
+        Parse a potentially chained command.
+
+        Supports:
+        - Pipes: "crawl url | summarize" - passes output to next command
+        - Arrows: "crawl url -> summarize" - same as pipe
+        - Sequence: "check email; remind me to reply" - runs independently
+        - Natural: "crawl url and then summarize it" - contextual chaining
+
+        Args:
+            text: User input that may contain multiple chained commands
+            user_id: Optional user ID for learned pattern matching
+
+        Returns:
+            CommandChain with list of ParsedCommands
+        """
+        text = text.strip()
+
+        # Split into segments
+        segments, chain_type = self._split_chain(text)
+
+        if len(segments) == 1:
+            # Single command - no chaining
+            cmd = self.parse(text, user_id)
+            return CommandChain(commands=[cmd], chain_type="none")
+
+        # Parse each segment
+        commands: list[ParsedCommand] = []
+        for i, segment in enumerate(segments):
+            cmd = self.parse(segment, user_id)
+
+            # Mark chain info
+            cmd.chain_type = chain_type if i < len(segments) - 1 else None
+
+            # For pipes, subsequent commands use previous output
+            if chain_type == "pipe" and i > 0:
+                cmd.use_previous_output = True
+                # Handle implicit targets like "summarize it", "summarize that"
+                if not cmd.params.get("target") and not cmd.entities.get("urls"):
+                    cmd.params["_use_previous"] = True
+
+            commands.append(cmd)
+
+        logger.debug(f"Parsed chain with {len(commands)} commands ({chain_type})")
+        return CommandChain(commands=commands, chain_type=chain_type)
+
+    def is_chain(self, text: str) -> bool:
+        """Check if text contains a command chain."""
+        return self._detect_chain(text) is not None
