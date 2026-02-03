@@ -217,7 +217,60 @@ actions:
     enabled: true
     allowed_paths:
       - "~"
+  weather:
+    enabled: true
+    provider: "wttr"  # or "open-meteo" - both free, no API key!
+    units: "imperial"  # or "metric"
+    default_location: "New York"
 ```
+
+### Weather (No API Key Needed)
+
+SafeClaw uses **[wttr.in](https://wttr.in)** for weather - a free service that requires no API key:
+
+```
+> weather
+> weather in Paris
+> what's the weather in Tokyo
+```
+
+**Alternative: Open-Meteo** (also free, no key):
+Add to config (`~/.safeclaw/config.yaml`) if you prefer Open-Meteo:
+```yaml
+actions:
+  weather:
+    enabled: true
+    provider: "open-meteo"  # or "wttr" (default)
+    units: "imperial"  # or "metric" for Celsius
+    default_location: "New York"
+```
+
+Both options:
+- ✅ 100% free
+- ✅ No API key required
+- ✅ No sign-up needed
+
+### Command Chaining
+
+Chain multiple commands together using pipes or sequences:
+
+**Pipes** - Pass output from one command to the next:
+```
+> crawl https://example.com | summarize
+> crawl site.com -> summarize it -> email to me
+```
+
+**Sequences** - Run commands independently:
+```
+> check email; remind me to reply
+> news and then weather
+> crawl site.com then summarize
+```
+
+Supported chain operators:
+- `|` or `->` - Pipe (passes output)
+- `;` - Sequence (independent)
+- `and then` / `then` - Natural language sequence
 
 ## Architecture
 
