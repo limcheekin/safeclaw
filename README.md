@@ -67,23 +67,57 @@ SafeClaw is an open-source alternative to cloud-based AI assistants that runs en
 
 ## Installation
 
+### Using pipx (recommended for most users)
+
 ```bash
-# Basic installation
-pip install safeclaw
+# Install pipx if needed
+sudo apt install pipx
+pipx ensurepath
 
-# With Telegram support
-pip install safeclaw[telegram]
-
-# With all optional features
-pip install safeclaw[all]
-
-# Development installation
-git clone https://github.com/safeclaw/safeclaw.git
-cd safeclaw
-pip install -e ".[dev]"
+# Install SafeClaw
+pipx install safeclaw
 ```
 
-**Requirements:** Python 3.11+
+### Using pip with virtual environment
+
+Modern Linux distros require virtual environments:
+
+```bash
+# Create and activate venv
+python3 -m venv ~/.safeclaw-venv
+source ~/.safeclaw-venv/bin/activate
+
+# Install SafeClaw
+pip install safeclaw
+```
+
+### From source
+
+```bash
+git clone https://github.com/safeclaw/safeclaw.git
+cd safeclaw
+pip install -e .
+```
+
+### Optional ML Features
+
+For users with more disk space:
+
+```bash
+# NLP - spaCy named entity recognition (~50MB)
+pip install safeclaw[nlp]
+
+# Vision - YOLO object detection + OCR (~2GB, requires PyTorch)
+pip install safeclaw[vision]
+
+# OCR only - text extraction from images (lightweight, requires Tesseract)
+pip install safeclaw[ocr]
+
+# All ML features
+pip install safeclaw[ml]
+```
+
+**Requirements:** Python 3.11+, ~50MB disk (base), ~2GB additional for vision features
 
 ## Quick Start
 
@@ -462,3 +496,4 @@ Areas we'd love help with:
 ---
 
 **SafeClaw** - Because sometimes you just want things to work, predictably. 🐾
+
