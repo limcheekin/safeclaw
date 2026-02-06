@@ -542,13 +542,28 @@ class WhisperSTTPlugin(BasePlugin):
         """Transcribe an audio file."""
         path = Path(file_path.strip('"\''))
 
-        if not path.exists():
+        # Resolve to prevent path traversal and restrict to home directory
+        try:
+            resolved = path.expanduser().resolve()
+            home = Path.home().resolve()
+            if not (resolved == home or resolved.is_relative_to(home)):
+                return "[red]Access denied: file is outside home directory[/red]"
+        except (OSError, ValueError):
+            return "[red]Invalid file path[/red]"
+
+        if not resolved.exists():
             return f"[red]File not found: {path}[/red]"
 
-        if not path.suffix.lower() in [".wav", ".mp3", ".flac", ".ogg", ".m4a"]:
-            return f"[yellow]Unsupported format: {path.suffix}[/yellow]\nSupported: wav, mp3, flac, ogg, m4a"
+        if resolved.suffix.lower() not in [".wav", ".mp3", ".flac", ".ogg", ".m4a"]:
+            return f"[yellow]Unsupported format: {resolved.suffix}[/yellow]\nSupported: wav, mp3, flac, ogg, m4a"
 
-        transcription = await self._transcribe(str(path))
+        # Reject symlinks pointing outside home directory
+        if resolved.is_symlink():
+            link_target = resolved.resolve(strict=True)
+            if not link_target.is_relative_to(home):
+                return "[red]Access denied: symlink target is outside home directory[/red]"
+
+        transcription = await self._transcribe(str(resolved))
 
         if transcription:
             return f"**Transcription:**\n{transcription}"
