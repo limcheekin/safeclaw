@@ -1,6 +1,6 @@
 [project]
 name = "safeclaw"
-version = "0.1.0"
+version = "0.2.0"
 description = "A privacy-first personal automation assistant - no GenAI required"
 readme = "README.md"
 license = {text = "MIT"}
@@ -137,3 +137,4 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
