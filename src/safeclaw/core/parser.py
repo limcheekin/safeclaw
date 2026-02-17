@@ -146,6 +146,11 @@ PHRASE_VARIATIONS = {
         "blog help",
         "my blog",
         "create blog",
+        "for title content",
+        "for body content",
+        "for non-title content",
+        "for heading content",
+        "for text content",
     ],
 }
 

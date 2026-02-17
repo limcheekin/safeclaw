@@ -63,14 +63,14 @@ class BlogAction(BaseAction):
         if self._is_help(lower):
             return self._help_text()
 
-        if self._is_show(lower):
-            return self._show_blogs(user_id)
-
         if self._is_crawl_blog(lower):
             return await self._crawl_for_blog(raw_input, user_id, engine)
 
         if self._is_write(lower):
             return await self._write_blog_news(raw_input, user_id, engine)
+
+        if self._is_show(lower):
+            return self._show_blogs(user_id)
 
         if self._is_generate_title(lower):
             return self._generate_title(user_id)
@@ -92,8 +92,8 @@ class BlogAction(BaseAction):
 
     def _is_show(self, text: str) -> bool:
         return bool(re.search(
-            r"(show|list|view|read)\s+(my\s+)?blog|blog\s+(entries|posts|list|show)",
-            text,
+            r"^(show|list|view|read)\s+(my\s+)?blog|^blog\s+(entries|posts|list|show)$",
+            text.strip(),
         ))
 
     def _is_write(self, text: str) -> bool:
