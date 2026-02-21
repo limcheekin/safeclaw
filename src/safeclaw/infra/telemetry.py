@@ -1,8 +1,9 @@
-from prometheus_client import Counter, Histogram
 from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.semconv.resource import ResourceAttributes
+from prometheus_client import Counter, Histogram
+
 from safeclaw.config.settings import settings
 
 # Prometheus Metrics

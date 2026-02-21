@@ -1,9 +1,4 @@
-import logging
-import uvicorn
-from fastmcp import FastMCP
-from safeclaw.config.settings import settings
 from safeclaw.mcp.server import mcp
-import safeclaw.mcp.tools  # Register tools
 
 # Expose ASGI app for uvicorn
 app = mcp.http_app()

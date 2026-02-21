@@ -1,22 +1,21 @@
 import hashlib
 import json
 import logging
-from typing import Any
+import time
 
 import pybreaker
 import redis.asyncio as redis
 from cerbos.sdk.grpc.client import AsyncCerbosClient
 from cerbos.sdk.model import Principal, Resource
 
-from safeclaw.config.settings import settings
 from safeclaw.auth.audit import audit_logger
+from safeclaw.config.settings import settings
 from safeclaw.infra.telemetry import (
     CERBOS_CALL_DURATION_SECONDS,
     CERBOS_DECISION_CACHE_HIT_TOTAL,
     CERBOS_DECISION_TOTAL,
     tracer,
 )
-import time
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +32,7 @@ class AuthClient:
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(AuthClient, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
             cls._instance.client = AsyncCerbosClient(settings.CERBOS_BASE_URL)
             cls._instance.redis = redis.from_url(settings.REDIS_URL) # Use generic REDIS_URL for now if cache backend is same
         return cls._instance

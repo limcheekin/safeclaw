@@ -1,7 +1,10 @@
+from unittest.mock import AsyncMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 from cerbos.sdk.model import Principal, Resource
+
 from safeclaw.auth.client import auth_client
+
 
 @pytest.mark.asyncio
 async def test_auth_client_allow():

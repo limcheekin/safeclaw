@@ -1,10 +1,10 @@
+import contextlib
 import functools
 import logging
-import contextlib
-from typing import Any, Callable
+from collections.abc import Callable
 
 from cerbos.sdk.model import Resource
-from fastmcp import FastMCP, Context
+from fastmcp import Context, FastMCP
 
 from safeclaw.auth.client import auth_client
 from safeclaw.auth.middleware import get_principal

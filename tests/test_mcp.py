@@ -1,7 +1,10 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 from fastmcp import Context
-from safeclaw.mcp.tools import get_weather, crawl_url, summarize_content
+
+from safeclaw.mcp.tools import crawl_url, get_weather, summarize_content
+
 
 # Helper to mock Context
 def mock_context(headers: dict = None):
@@ -65,6 +68,7 @@ async def test_summarize_allowed():
 @pytest.mark.asyncio
 async def test_admin_flush_cache_endpoint():
     from starlette.testclient import TestClient
+
     from safeclaw.mcp.server import mcp
 
     # We need to ensure startup hooks run? TestClient(lifespan="on") runs them.

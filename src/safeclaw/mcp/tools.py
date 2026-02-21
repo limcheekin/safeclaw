@@ -1,7 +1,7 @@
 from typing import Any
 
 from cerbos.sdk.model import Resource
-from fastmcp import Context, FastMCP
+from fastmcp import Context
 
 from safeclaw.actions import weather
 from safeclaw.actions.crawl import CrawlAction
