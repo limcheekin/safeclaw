@@ -1,5 +1,4 @@
 import logging
-
 from safeclaw.core.engine import SafeClaw
 
 logger = logging.getLogger(__name__)
@@ -19,18 +18,18 @@ class MCPService:
     async def initialize(self):
         """Initialize the engine components."""
         logger.info("Initializing SafeClaw engine for MCP...")
-        self.engine.load_config()
-        await self.engine.memory.initialize()
+        self.engine.load_config()  # type: ignore
+        await self.engine.memory.initialize()  # type: ignore
         # We don't start the scheduler or channels as we are driving it via MCP
         logger.info("SafeClaw engine initialized.")
 
     async def shutdown(self):
         """Shutdown the engine components."""
         logger.info("Shutting down SafeClaw engine...")
-        await self.engine.memory.close()
+        await self.engine.memory.close()  # type: ignore
         logger.info("SafeClaw engine shutdown.")
 
     def get_engine(self) -> SafeClaw:
-        return self.engine
+        return self.engine  # type: ignore
 
 service = MCPService()

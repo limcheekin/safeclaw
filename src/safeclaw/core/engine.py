@@ -10,7 +10,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-import yaml
+import yaml  # type: ignore
 
 from safeclaw.core.memory import Memory
 from safeclaw.core.parser import CommandParser

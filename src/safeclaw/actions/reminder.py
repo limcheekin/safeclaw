@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
-import dateparser
+import dateparser  # type: ignore
 
 from safeclaw.actions.base import BaseAction
 

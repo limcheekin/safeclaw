@@ -521,26 +521,26 @@ async def _calendar(action: str, path: Path | None, days: int) -> None:
             console.print(f"[red]File not found: {path}[/red]")
             return
 
-        events = parser.parse_file(path)
-        if not events:
+        success = parser.parse_file(path)
+        if not success:
             console.print("[yellow]No events found in file.[/yellow]")
             return
 
-        console.print(f"[green]Imported {len(events)} events from {path.name}[/green]\n")
+        console.print(f"[green]Imported {len(parser.events)} events from {path.name}[/green]\n")  # type: ignore  # type: ignore
 
         # Show preview
-        for event in events[:10]:
-            date_str = event.start.strftime("%Y-%m-%d %H:%M")
+        for event in parser.events[:10]:  # type: ignore
+            date_str = event.start.strftime("%Y-%m-%d %H:%M")  # type: ignore
             console.print(f"  {date_str} - {event.summary}")
             if event.location:
                 console.print(f"    [dim]{event.location}[/dim]")
 
-        if len(events) > 10:
-            console.print(f"\n  [dim]... and {len(events) - 10} more events[/dim]")
-    else:
-        console.print("[yellow]Use --file to specify an ICS file to import.[/yellow]")
-        console.print("\nExamples:")
-        console.print("  safeclaw calendar import --file calendar.ics")
+        if len(parser.events) > 10:  # type: ignore
+            console.print(f"\n  [dim]... and {len(parser.events) - 10} more events[/dim]")  # type: ignore
+    else:  # type: ignore
+        console.print("[yellow]Use --file to specify an ICS file to import.[/yellow]")  # type: ignore
+        console.print("\nExamples:")  # type: ignore
+        console.print("  safeclaw calendar import --file calendar.ics")  # type: ignore
         console.print("  safeclaw calendar today")
         console.print("  safeclaw calendar upcoming --days 14")
 

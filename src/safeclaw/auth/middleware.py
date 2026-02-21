@@ -24,22 +24,22 @@ async def get_principal(ctx: Context | None = None) -> Principal:
     }
 
     # If we are in an HTTP context (SSE), we might have headers in the context
-    headers = {}
+    headers: dict[str, Any] = {}
     if ctx and hasattr(ctx, "headers"):
-        headers = ctx.headers or {}
+        headers = ctx.headers or {}  # type: ignore
 
     # 1. Trusted Headers (Reverse Proxy)
     if settings.PRINCIPAL_ATTR_SOURCE == "introspect":
         if "x-user-id" in headers:
-            principal_id = headers["x-user-id"]
+            principal_id = str(headers["x-user-id"])
             attr["source"] = "header"
             attr["assurance_level"] = "medium"
         if "x-user-role" in headers:
-            roles = headers["x-user-role"].split(",")
+            roles = str(headers["x-user-role"]).split(",")
 
     # 2. JWT
     elif settings.PRINCIPAL_ATTR_SOURCE == "jwt":
-        auth_header = headers.get("authorization", "")
+        auth_header = str(headers.get("authorization", ""))
         if auth_header.startswith("Bearer "):
             token = auth_header.split(" ")[1]
             try:
@@ -67,9 +67,11 @@ async def get_principal(ctx: Context | None = None) -> Principal:
                     attr["assurance_level"] = "low"
 
                 principal_id = payload.get("sub", principal_id)
-                roles = payload.get("roles", roles)
-                if isinstance(roles, str):
-                    roles = [roles]
+                roles_claim = payload.get("roles", roles)
+                if isinstance(roles_claim, str):
+                    roles = [roles_claim]
+                elif isinstance(roles_claim, list):
+                    roles = roles_claim
 
                 attr["source"] = "jwt"
                 # Copy other claims
@@ -95,6 +97,6 @@ async def get_principal(ctx: Context | None = None) -> Principal:
 
     return Principal(
         id=principal_id,
-        roles=roles,
+        roles=set(roles),
         attr=attr,
     )

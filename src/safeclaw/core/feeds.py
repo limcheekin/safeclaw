@@ -173,7 +173,7 @@ class FeedReader:
             if datetime.now() - cached_at < timedelta(seconds=self.cache_ttl):
                 return items
 
-        items: list[FeedItem] = []
+        new_items: list[FeedItem] = []
 
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -237,7 +237,7 @@ class FeedReader:
                                 sentences=self.summary_sentences,
                             )
 
-                    items.append(item)
+                    new_items.append(item)
 
                 feed.last_fetched = datetime.now()
 
@@ -245,9 +245,9 @@ class FeedReader:
             logger.error(f"Error fetching feed {feed.name}: {e}")
 
         # Update cache
-        self._cache[cache_key] = (items, datetime.now())
+        self._cache[cache_key] = (new_items, datetime.now())
 
-        return items
+        return new_items
 
     async def fetch_feeds(self, feeds: list[Feed]) -> list[FeedItem]:
         """Fetch multiple feeds concurrently."""

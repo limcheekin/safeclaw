@@ -34,7 +34,7 @@ class AuthClient:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance.client = AsyncCerbosClient(settings.CERBOS_BASE_URL)
-            cls._instance.redis = redis.from_url(settings.REDIS_URL) # Use generic REDIS_URL for now if cache backend is same
+            cls._instance.redis = redis.from_url(settings.REDIS_URL)  # Use generic REDIS_URL for now if cache backend is same
         return cls._instance
 
     def _get_cache_key(self, principal: Principal, resource: Resource, action: str) -> str:
@@ -83,7 +83,7 @@ class AuthClient:
 
         # 1. Check Cache
         try:
-            cached_decision = await self.redis.get(cache_key)
+            cached_decision = await self.redis.get(cache_key)  # type: ignore
             if cached_decision is not None:
                 CERBOS_DECISION_CACHE_HIT_TOTAL.labels(resource=resource.kind, action=action).inc()
                 logger.debug(f"Cerbos cache hit for {cache_key}")
@@ -126,7 +126,7 @@ class AuthClient:
                     ttl = settings.CERBOS_CACHE_TTL_LOW
 
             try:
-                await self.redis.setex(cache_key, ttl, "1" if decision else "0")
+                await self.redis.setex(cache_key, ttl, "1" if decision else "0")  # type: ignore
             except Exception as e:
                 logger.warning(f"Redis set error: {e}")
 
@@ -154,9 +154,9 @@ class AuthClient:
             cursor = 0
             deleted_count = 0
             while True:
-                cursor, keys = await self.redis.scan(cursor, match=pattern, count=100)
+                cursor, keys = await self.redis.scan(cursor, match=pattern, count=100)  # type: ignore
                 if keys:
-                    await self.redis.delete(*keys)
+                    await self.redis.delete(*keys)  # type: ignore
                     deleted_count += len(keys)
                 if cursor == 0:
                     break

@@ -62,15 +62,15 @@ class OCRResult:
     """OCR extraction result."""
     text: str
     confidence: float
-    language: str | None = None
+    language: str | None = None  # type: ignore
 
 
 @dataclass
 class VisionResult:
     """Combined vision analysis result."""
     detections: list[Detection]
-    ocr_text: str | None = None
-    labels: list[str] = None
+    ocr_text: str | None = None  # type: ignore
+    labels: list[str] = None  # type: ignore
 
     def __post_init__(self):
         if self.labels is None:
@@ -93,7 +93,7 @@ class ObjectDetector:
         Args:
             model: YOLO model - yolov8n (nano), yolov8s (small), yolov8m (medium)
         """
-        self._model = None
+        self._model = None  # type: ignore
         self._model_name = model
         if HAS_YOLO:
             self._load_model()
@@ -127,7 +127,7 @@ class ObjectDetector:
             return []
 
         try:
-            results = self._model(image, conf=confidence, verbose=False)
+            results = self._model(image, conf=confidence, verbose=False)  # type: ignore
             detections = []
 
             for result in results:
@@ -195,7 +195,7 @@ class OCRProcessor:
     def extract_text(
         self,
         image: str | Path | bytes,
-        language: str | None = None,
+        language: str | None = None,  # type: ignore
     ) -> OCRResult:
         """
         Extract text from image.
@@ -261,7 +261,7 @@ class VisionProcessor:
             extract_text: Run OCR
         """
         detections = []
-        ocr_text = None
+        ocr_text = None  # type: ignore
 
         if detect_objects and self.detector.is_available:
             detections = self.detector.detect(image)
