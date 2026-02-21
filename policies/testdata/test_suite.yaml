@@ -1,0 +1,106 @@
+---
+name: SafeClaw Policies Test Suite
+principals:
+  user1:
+    id: user1
+    roles: ["user"]
+  user2:
+    id: user2
+    roles: ["user"]
+  admin:
+    id: admin
+    roles: ["admin"]
+
+resources:
+  weather_ny:
+    kind: weather
+    id: New York
+    attr:
+      location: New York
+
+  crawl_github:
+    kind: crawl
+    id: github
+    attr:
+      url: https://github.com
+
+  crawl_evil:
+    kind: crawl
+    id: evil
+    attr:
+      url: https://evil.com
+
+  doc1:
+    kind: document
+    id: doc1
+    attr:
+      owner_id: user1
+
+tests:
+  - name: Weather Check
+    input:
+      principals: ["user1", "admin"]
+      resources: ["weather_ny"]
+      actions: ["read"]
+    expected:
+      - principal: user1
+        resource: weather_ny
+        action: read
+        effect: EFFECT_ALLOW
+      - principal: admin
+        resource: weather_ny
+        action: read
+        effect: EFFECT_ALLOW
+
+  - name: Crawl Check (Github)
+    input:
+      principals: ["user1", "admin"]
+      resources: ["crawl_github"]
+      actions: ["read"]
+    expected:
+      - principal: user1
+        resource: crawl_github
+        action: read
+        effect: EFFECT_ALLOW
+      - principal: admin
+        resource: crawl_github
+        action: read
+        effect: EFFECT_ALLOW
+
+  - name: Crawl Check (Evil)
+    input:
+      principals: ["user1"]
+      resources: ["crawl_evil"]
+      actions: ["read"]
+    expected:
+      - principal: user1
+        resource: crawl_evil
+        action: read
+        effect: EFFECT_DENY
+
+  - name: Document Owner Check
+    input:
+      principals: ["user1", "user2", "admin"]
+      resources: ["doc1"]
+      actions: ["read", "update"]
+    expected:
+      - principal: user1
+        resource: doc1
+        action: read
+        effect: EFFECT_ALLOW
+      - principal: user1
+        resource: doc1
+        action: update
+        effect: EFFECT_ALLOW
+      - principal: user2
+        resource: doc1
+        action: read
+        effect: EFFECT_DENY
+      - principal: user2
+        resource: doc1
+        action: update
+        effect: EFFECT_DENY
+      - principal: admin
+        resource: doc1
+        action: read
+        effect: EFFECT_ALLOW
