@@ -45,8 +45,8 @@ jobs:
       run: |
         curl -L https://github.com/cerbos/cerbos/releases/download/v0.51.0/cerbosctl_0.51.0_Linux_x86_64.tar.gz -o cerbos.tar.gz
         tar xzf cerbos.tar.gz
-        sudo mv cerbos /usr/local/bin/
-        cerbos --version
+        sudo mv cerbosctl /usr/local/bin/
+        cerbosctl --version
 
     - name: Test Policies
-      run: cerbos compile policies/ --tests=policies/testdata
+      run: cerbosctl compile policies/ --tests=policies/testdata
