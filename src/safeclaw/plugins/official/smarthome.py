@@ -175,6 +175,9 @@ class SmartHomePlugin(BasePlugin):
         self, action: str, target: str | None, level: int | None
     ) -> str:
         """Execute command via Philips Hue."""
+        if not self.hue_bridge:
+            return "Hue bridge not connected"
+
         try:
             lights = self.hue_bridge.lights
 
@@ -212,6 +215,9 @@ class SmartHomePlugin(BasePlugin):
         self, action: str, target: str | None, level: int | None
     ) -> str:
         """Execute command via MQTT (Home Assistant)."""
+        if not self.mqtt_client:
+            return "MQTT client not connected"
+
         try:
             # Home Assistant MQTT convention
             domain = "light"

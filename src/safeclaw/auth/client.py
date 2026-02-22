@@ -29,6 +29,8 @@ breaker = pybreaker.CircuitBreaker(
 
 class AuthClient:
     _instance = None
+    client: AsyncCerbosClient
+    redis: redis.Redis
 
     def __new__(cls):
         if cls._instance is None:
