@@ -43,7 +43,7 @@ class SmartHomePlugin(BasePlugin):
         ],
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.hue_bridge = None
         self.mqtt_client = None
         self._config: dict = {}
@@ -66,9 +66,10 @@ class SmartHomePlugin(BasePlugin):
         """Initialize Philips Hue connection."""
         try:
             from phue import Bridge
-            self.hue_bridge = Bridge(bridge_ip)
+            bridge = Bridge(bridge_ip)
             # First time requires pressing the button on the bridge
-            self.hue_bridge.connect()
+            bridge.connect()
+            self.hue_bridge = bridge
             logger.info(f"Connected to Hue bridge at {bridge_ip}")
         except ImportError:
             logger.warning("phue not installed. Run: pip install safeclaw[smarthome]")
@@ -79,9 +80,10 @@ class SmartHomePlugin(BasePlugin):
         """Initialize MQTT connection for Home Assistant."""
         try:
             import paho.mqtt.client as mqtt
-            self.mqtt_client = mqtt.Client()
-            self.mqtt_client.connect(broker, port, 60)
-            self.mqtt_client.loop_start()
+            client = mqtt.Client()
+            client.connect(broker, port, 60)
+            client.loop_start()
+            self.mqtt_client = client
             logger.info(f"Connected to MQTT broker at {broker}:{port}")
         except ImportError:
             logger.warning("paho-mqtt not installed. Run: pip install safeclaw[smarthome]")

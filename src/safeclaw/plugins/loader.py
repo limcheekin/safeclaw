@@ -23,7 +23,7 @@ class PluginLoader:
     - Custom paths via load_from_path()
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.plugins: dict[str, BasePlugin] = {}
         self._plugin_dir = Path(__file__).parent
 

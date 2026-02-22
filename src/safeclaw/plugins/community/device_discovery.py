@@ -91,7 +91,7 @@ class DeviceDiscoveryPlugin(BasePlugin):
         ],
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.devices: dict[str, DiscoveredDevice] = {}
         self._engine: Any = None
         self._data_file: Path | None = None

@@ -344,7 +344,7 @@ class EmailAction(BaseAction):
     name = "email"
     description = "Check and send emails"
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._client: EmailClient | None = None
 
     async def execute(

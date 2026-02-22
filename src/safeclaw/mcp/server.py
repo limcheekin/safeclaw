@@ -1,7 +1,7 @@
 import contextlib
 import functools
 import logging
-from collections.abc import Callable
+from typing import Any, Callable
 
 from cerbos.sdk.model import Resource
 from fastmcp import Context, FastMCP
@@ -61,7 +61,7 @@ def authorize(action: str, resource_kind: str):
     """
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
             ctx: Context | None = None
             for arg in args:
                 if isinstance(arg, Context):

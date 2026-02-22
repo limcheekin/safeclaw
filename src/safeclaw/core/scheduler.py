@@ -28,7 +28,7 @@ class Scheduler:
     - Dynamic job management
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._scheduler = AsyncIOScheduler()
         self._jobs: dict[str, str] = {}  # name -> job_id mapping
 

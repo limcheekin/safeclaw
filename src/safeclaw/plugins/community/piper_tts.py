@@ -60,7 +60,7 @@ class PiperTTSPlugin(BasePlugin):
         ],
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.enabled = False
         self.piper_path: Path | None = None
         self.model_path: Path | None = None

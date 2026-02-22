@@ -70,12 +70,14 @@ class TelegramChannel(BaseChannel):
         logger.info("Starting Telegram bot...")
         await self.app.initialize()
         await self.app.start()
-        await self.app.updater.start_polling()
+        if self.app.updater:
+            await self.app.updater.start_polling()
 
     async def stop(self) -> None:
         """Stop the Telegram bot."""
         if self.app:
-            await self.app.updater.stop()
+            if self.app.updater:
+                await self.app.updater.stop()
             await self.app.stop()
             await self.app.shutdown()
             logger.info("Telegram bot stopped")

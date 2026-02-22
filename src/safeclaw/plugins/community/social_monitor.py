@@ -94,7 +94,7 @@ class SocialMonitorPlugin(BasePlugin):
         "nitter.woodland.cafe",
     ]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._engine: Any = None
         self._data_file: Path | None = None
         self.accounts: dict[str, WatchedAccount] = {}

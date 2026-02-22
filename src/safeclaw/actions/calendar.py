@@ -43,7 +43,7 @@ class CalendarEvent:
 class CalendarParser:
     """Parses .ics calendar files."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.events: list[CalendarEvent] = []
 
     def parse_file(self, path: str | Path) -> bool:
@@ -144,7 +144,7 @@ class CalendarAction(BaseAction):
     name = "calendar"
     description = "Manage calendar events"
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.parser: CalendarParser | None = None
 
     async def execute(

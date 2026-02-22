@@ -66,7 +66,7 @@ class WhisperSTTPlugin(BasePlugin):
         ],
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.enabled = False
         self.listening = False
         self._engine: Any = None
