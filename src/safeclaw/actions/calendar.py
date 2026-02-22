@@ -1,10 +1,7 @@
 """
-SafeClaw Calendar Action - ICS/CalDAV calendar support.
+SafeClaw Calendar Action - ICS/CalDAV support.
 
-Supports:
-- Reading .ics files
-- Parsing calendar events
-- CalDAV server sync (Google, iCloud, etc.)
+No API keys required - standard protocols.
 """
 
 import logging
@@ -13,242 +10,141 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import dateparser  # type: ignore
+from icalendar import Calendar, Event
+
 from safeclaw.actions.base import BaseAction
-
-logger = logging.getLogger(__name__)
-
-# Try imports
-try:
-    from icalendar import Calendar as ICalendar
-    from icalendar import Event as ICalEvent
-    HAS_ICALENDAR = True
-except ImportError:
-    HAS_ICALENDAR = False
-    logger.warning("icalendar not installed")
-
-try:
-    import caldav
-    HAS_CALDAV = True
-except ImportError:
-    HAS_CALDAV = False
 
 if TYPE_CHECKING:
     from safeclaw.core.engine import SafeClaw
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
 class CalendarEvent:
     """Represents a calendar event."""
-    uid: str
     summary: str
-    description: str
-    location: str
     start: datetime
     end: datetime
-    all_day: bool
-    recurring: bool
-    organizer: str
-    attendees: list[str]
+    location: str = ""
+    description: str = ""
+    all_day: bool = False
 
     @property
     def duration(self) -> timedelta:
         return self.end - self.start
 
-    @property
-    def is_today(self) -> bool:
-        today = datetime.now().date()
-        return self.start.date() == today
-
-    @property
-    def is_upcoming(self) -> bool:
-        return self.start > datetime.now()
+    def __str__(self) -> str:
+        date_fmt = "%Y-%m-%d" if self.all_day else "%Y-%m-%d %H:%M"
+        return f"{self.start.strftime(date_fmt)} - {self.summary}"
 
 
 class CalendarParser:
-    """
-    Parse ICS/iCalendar files.
-
-    No API keys required - standard format.
-    """
+    """Parses .ics calendar files."""
 
     def __init__(self):
-        if not HAS_ICALENDAR:
-            raise ImportError("icalendar not installed. Run: pip install icalendar")
+        self.events: list[CalendarEvent] = []
 
-    def parse_file(self, path: str | Path) -> list[CalendarEvent]:
+    def parse_file(self, path: str | Path) -> bool:
         """Parse an .ics file."""
-        path = Path(path)
-
-        if not path.exists():
-            logger.error(f"File not found: {path}")
-            return []
-
-        with open(path, 'rb') as f:
-            return self.parse_ics(f.read())
-
-    def parse_ics(self, content: bytes | str) -> list[CalendarEvent]:
-        """Parse ICS content."""
-        if isinstance(content, str):
-            content = content.encode('utf-8')
-
         try:
-            cal = ICalendar.from_ical(content)
+            with open(path, 'rb') as f:
+                cal = Calendar.from_ical(f.read())
+
+            self.events = []
+            for component in cal.walk():
+                if component.name == "VEVENT":
+                    self._parse_event(component)
+
+            # Sort by start date
+            self.events.sort(key=lambda x: x.start)
+            return True
         except Exception as e:
-            logger.error(f"Failed to parse ICS: {e}")
-            return []
+            logger.error(f"Failed to parse calendar: {e}")
+            return False
 
-        events = []
-
-        for component in cal.walk():
-            if component.name == "VEVENT":
-                event = self._parse_event(component)
-                if event:
-                    events.append(event)
-
-        # Sort by start time
-        events.sort(key=lambda e: e.start)
-
-        return events
-
-    def _parse_event(self, component) -> CalendarEvent | None:
-        """Parse a VEVENT component."""
+    def _parse_event(self, component: Event) -> None:
+        """Parse a single VEVENT."""
         try:
-            # Get UID
-            uid = str(component.get('uid', ''))
-
-            # Get summary (title)
-            summary = str(component.get('summary', 'Untitled'))
-
-            # Get description
+            summary = str(component.get('summary', 'No Title'))
+            location = str(component.get('location', ''))
             description = str(component.get('description', ''))
 
-            # Get location
-            location = str(component.get('location', ''))
-
-            # Get start/end times
-            dtstart = component.get('dtstart')
+            dtstart = component.get('dtstart').dt
             dtend = component.get('dtend')
 
-            if not dtstart:
-                return None
-
-            start = dtstart.dt
-            all_day = False
-
-            # Check if all-day event (date vs datetime)
-            if not isinstance(start, datetime):
-                all_day = True
-                start = datetime.combine(start, datetime.min.time())
-
             if dtend:
-                end = dtend.dt
-                if not isinstance(end, datetime):
-                    end = datetime.combine(end, datetime.min.time())
+                dtend = dtend.dt
             else:
-                # Default duration of 1 hour
-                end = start + timedelta(hours=1)
+                # Default to 1 hour duration if no end time
+                if isinstance(dtstart, datetime):
+                    dtend = dtstart + timedelta(hours=1)
+                else:
+                    dtend = dtstart + timedelta(days=1)
 
-            # Make timezone-naive for comparison
-            if start.tzinfo:
-                start = start.replace(tzinfo=None)
-            if end.tzinfo:
-                end = end.replace(tzinfo=None)
+            # Handle timezone naive/aware
+            # For simplicity in this non-AI tool, we'll keep as-is or ensure UTC?
+            # icalendar handles parsing well.
 
-            # Get organizer
-            organizer = ""
-            org = component.get('organizer')
-            if org:
-                organizer = str(org).replace('mailto:', '')
+            # Check if all day (date vs datetime)
+            all_day = not isinstance(dtstart, datetime)
 
-            # Get attendees
-            attendees = []
-            for att in component.get('attendee', []):
-                attendees.append(str(att).replace('mailto:', ''))
+            # Convert date to datetime for comparison
+            if all_day:
+                start = datetime.combine(dtstart, datetime.min.time())
+                end = datetime.combine(dtend, datetime.min.time())
+            else:
+                start = dtstart
+                end = dtend
 
-            # Check if recurring
-            recurring = component.get('rrule') is not None
+            # Ensure timezone awareness consistency if needed
+            # For now, we assume naive local time or provided TZ
 
-            return CalendarEvent(
-                uid=uid,
+            self.events.append(CalendarEvent(
                 summary=summary,
-                description=description,
-                location=location,
                 start=start,
                 end=end,
+                location=location,
+                description=description,
                 all_day=all_day,
-                recurring=recurring,
-                organizer=organizer,
-                attendees=attendees,
-            )
-
+            ))
         except Exception as e:
-            logger.error(f"Failed to parse event: {e}")
-            return None
+            logger.warning(f"Skipping invalid event: {e}")
 
-    def filter_by_date_range(
-        self,
-        events: list[CalendarEvent],
-        start: datetime,
-        end: datetime,
-    ) -> list[CalendarEvent]:
-        """Filter events by date range."""
+    def get_upcoming_events(self, days: int = 7) -> list[CalendarEvent]:
+        """Get events for the next N days."""
+        now = datetime.now()
+        if self.events and self.events[0].start.tzinfo:
+             now = datetime.now().astimezone(self.events[0].start.tzinfo)
+
+        limit = now + timedelta(days=days)
+
         return [
-            e for e in events
-            if e.start >= start and e.start <= end
+            e for e in self.events
+            if e.start >= now and e.start <= limit
         ]
 
-    def get_today_events(self, events: list[CalendarEvent]) -> list[CalendarEvent]:
+    def get_today_events(self) -> list[CalendarEvent]:
         """Get events for today."""
-        today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        tomorrow = today + timedelta(days=1)
-        return self.filter_by_date_range(events, today, tomorrow)
-
-    def get_upcoming_events(
-        self,
-        events: list[CalendarEvent],
-        days: int = 7,
-    ) -> list[CalendarEvent]:
-        """Get upcoming events for next N days."""
-        now = datetime.now()
-        end = now + timedelta(days=days)
-        return self.filter_by_date_range(events, now, end)
+        return self.get_upcoming_events(days=1)
 
 
 class CalendarAction(BaseAction):
     """
-    Calendar action for SafeClaw.
+    Calendar operations.
 
     Commands:
-    - show calendar / today / schedule
-    - upcoming events
-    - import calendar file.ics
+    - calendar today
+    - calendar upcoming
+    - calendar import file.ics
     """
 
     name = "calendar"
-    description = "View and manage calendar events"
+    description = "Manage calendar events"
 
-    def __init__(self, allowed_paths: list[str] | None = None):
-        self._parser: CalendarParser | None = None
-        self._events: list[CalendarEvent] = []
-        # Default to home directory for security
-        self.allowed_paths = [
-            Path(p).expanduser().resolve()
-            for p in (allowed_paths or ["~"])
-        ]
-
-    def _is_allowed_path(self, path: Path) -> bool:
-        """Check if path is within allowed directories."""
-        try:
-            resolved = path.expanduser().resolve()
-            for allowed in self.allowed_paths:
-                try:
-                    if resolved == allowed or resolved.is_relative_to(allowed):
-                        return True
-                except ValueError:
-                    continue
-            return False
-        except (OSError, ValueError):
-            return False
+    def __init__(self):
+        self.parser: CalendarParser | None = None
 
     async def execute(
         self,
@@ -258,157 +154,65 @@ class CalendarAction(BaseAction):
         engine: "SafeClaw",
     ) -> str:
         """Execute calendar action."""
-        if not HAS_ICALENDAR:
-            return "Calendar support not installed. Run: pip install icalendar"
-
-        self._parser = CalendarParser()
-
         subcommand = params.get("subcommand", "today")
 
-        # Load cached events
-        cached = await engine.memory.get(f"calendar_{user_id}")
-        if cached:
-            # Reconstruct events from cached data
-            self._events = []
-            for e in cached:
-                try:
-                    self._events.append(CalendarEvent(
-                        uid=e['uid'],
-                        summary=e['summary'],
-                        description=e.get('description', ''),
-                        location=e.get('location', ''),
-                        start=datetime.fromisoformat(e['start']),
-                        end=datetime.fromisoformat(e['end']),
-                        all_day=e.get('all_day', False),
-                        recurring=e.get('recurring', False),
-                        organizer=e.get('organizer', ''),
-                        attendees=e.get('attendees', []),
-                    ))
-                except Exception:
-                    pass
+        # Load default calendar if not loaded
+        if not self.parser:
+            path = await engine.memory.get_preference(user_id, "calendar_path")
+            if path:
+                self.parser = CalendarParser()
+                self.parser.parse_file(path)  # type: ignore
+
+        if subcommand == "import":
+            return await self._import_calendar(params, user_id, engine)
+
+        if not self.parser:
+            return "No calendar loaded. Use `calendar import --file path/to/cal.ics`"
 
         if subcommand == "today":
-            return self._show_today()
+            return self._format_events(self.parser.get_today_events(), "Today's Events")  # type: ignore
         elif subcommand == "upcoming":
-            days = params.get("days", 7)
-            return self._show_upcoming(days)
-        elif subcommand == "import":
-            path = params.get("path", "")
-            return await self._import_file(path, user_id, engine)
-        elif subcommand == "week":
-            return self._show_upcoming(7)
+            days = int(params.get("days", 7))
+            return self._format_events(
+                self.parser.get_upcoming_events(days),  # type: ignore
+                f"Upcoming Events ({days} days)"
+            )
         else:
-            return self._show_today()
+            return f"Unknown subcommand: {subcommand}"
 
-    def _show_today(self) -> str:
-        """Show today's events."""
-        if not self._events:
-            return "📅 No calendar imported. Use `calendar import file.ics`"
-
-        today_events = self._parser.get_today_events(self._events)
-
-        if not today_events:
-            return "📅 No events scheduled for today."
-
-        lines = [f"📅 **Today's Schedule** ({len(today_events)} events)", ""]
-
-        for event in today_events:
-            if event.all_day:
-                time_str = "All day"
-            else:
-                time_str = event.start.strftime("%H:%M")
-                if event.end:
-                    time_str += f" - {event.end.strftime('%H:%M')}"
-
-            lines.append(f"**{time_str}** - {event.summary}")
-            if event.location:
-                lines.append(f"  📍 {event.location}")
-            if event.description:
-                lines.append(f"  _{event.description[:100]}_")
-            lines.append("")
-
-        return "\n".join(lines)
-
-    def _show_upcoming(self, days: int) -> str:
-        """Show upcoming events."""
-        if not self._events:
-            return "📅 No calendar imported. Use `calendar import file.ics`"
-
-        upcoming = self._parser.get_upcoming_events(self._events, days)
-
-        if not upcoming:
-            return f"📅 No events in the next {days} days."
-
-        lines = [f"📅 **Upcoming Events** (next {days} days)", ""]
-
-        current_date = None
-        for event in upcoming:
-            event_date = event.start.date()
-
-            # Add date header
-            if event_date != current_date:
-                current_date = event_date
-                date_str = event_date.strftime("%A, %B %d")
-                lines.append(f"**{date_str}**")
-
-            if event.all_day:
-                time_str = "All day"
-            else:
-                time_str = event.start.strftime("%H:%M")
-
-            lines.append(f"  • {time_str} - {event.summary}")
-            if event.location:
-                lines.append(f"    📍 {event.location}")
-
-        lines.append("")
-        return "\n".join(lines)
-
-    async def _import_file(
+    async def _import_calendar(
         self,
-        path: str,
+        params: dict[str, Any],
         user_id: str,
-        engine: "SafeClaw",
+        engine: "SafeClaw"
     ) -> str:
-        """Import a calendar file."""
-        if not path:
-            return "Please specify a path to an .ics file."
+        """Import an ICS file."""
+        path_str = params.get("file") or params.get("path")
+        if not path_str:
+            return "Please specify a file path: `calendar import --file my.ics`"
 
-        file_path = Path(path).expanduser()
+        path = Path(path_str).expanduser()
+        if not path.exists():
+            return f"File not found: {path}"
 
-        # Security: validate path is within allowed directories
-        if not self._is_allowed_path(file_path):
-            return f"Access denied: {path} is outside allowed directories"
+        self.parser = CalendarParser()
+        if self.parser.parse_file(path):
+            # Save preference
+            await engine.memory.set_preference(user_id, "calendar_path", str(path))
+            return f"✅ Loaded calendar with {len(self.parser.events)} events"
+        else:
+            return "❌ Failed to parse calendar file"
 
-        if not file_path.exists():
-            return f"File not found: {file_path}"
-
-        if not file_path.suffix.lower() == '.ics':
-            return "Only .ics files are supported."
-
-        events = self._parser.parse_file(file_path)
-
+    def _format_events(self, events: list[CalendarEvent], title: str) -> str:
+        """Format events list."""
         if not events:
-            return "No events found in the file."
+            return f"{title}: No events found."
 
-        self._events = events
+        lines = [f"📅 **{title}**", ""]
+        for e in events:
+            time_str = "All Day" if e.all_day else e.start.strftime("%H:%M")
+            lines.append(f"• **{time_str}** {e.summary}")
+            if e.location:
+                lines.append(f"  📍 {e.location}")
 
-        # Cache events
-        cached_data = [
-            {
-                'uid': e.uid,
-                'summary': e.summary,
-                'description': e.description,
-                'location': e.location,
-                'start': e.start.isoformat(),
-                'end': e.end.isoformat(),
-                'all_day': e.all_day,
-                'recurring': e.recurring,
-                'organizer': e.organizer,
-                'attendees': e.attendees,
-            }
-            for e in events
-        ]
-
-        await engine.memory.set(f"calendar_{user_id}", cached_data)
-
-        return f"✅ Imported {len(events)} events from {file_path.name}"
+        return "\n".join(lines)

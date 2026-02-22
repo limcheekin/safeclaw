@@ -160,8 +160,9 @@ class FilesAction(BaseAction):
 
     def _format_size(self, size: int) -> str:
         """Format file size for display."""
+        size_f = float(size)
         for unit in ["B", "KB", "MB", "GB"]:
-            if size < 1024:
-                return f"{size:.1f} {unit}"
-            size /= 1024
-        return f"{size:.1f} TB"
+            if size_f < 1024:
+                return f"{size_f:.1f} {unit}"
+            size_f /= 1024
+        return f"{size_f:.1f} TB"

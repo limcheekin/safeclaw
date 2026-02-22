@@ -5,6 +5,7 @@ No API keys required - uses standard email protocols.
 """
 
 import email
+import email.utils
 import imaplib
 import logging
 import re
@@ -160,15 +161,15 @@ class EmailClient:
                 elif content_type == "text/plain" and not body:
                     payload = part.get_payload(decode=True)
                     if payload:
-                        body = payload.decode('utf-8', errors='replace')
+                        body = payload.decode('utf-8', errors='replace')  # type: ignore
                 elif content_type == "text/html" and not body_html:
                     payload = part.get_payload(decode=True)
                     if payload:
-                        body_html = payload.decode('utf-8', errors='replace')
+                        body_html = payload.decode('utf-8', errors='replace')  # type: ignore
         else:
             payload = msg.get_payload(decode=True)
             if payload:
-                body = payload.decode('utf-8', errors='replace')
+                body = payload.decode('utf-8', errors='replace')  # type: ignore
 
         # If no plain text, try to extract from HTML
         if not body and body_html:
@@ -195,11 +196,12 @@ class EmailClient:
                     self.config.imap_port,
                 )
             else:
-                self._imap = imaplib.IMAP4(
+                self._imap = imaplib.IMAP4(  # type: ignore
                     self.config.imap_server,
                     self.config.imap_port,
                 )
 
+            assert self._imap
             self._imap.login(self.config.username, self.config.password)
             return True
         except Exception as e:
@@ -223,6 +225,7 @@ class EmailClient:
                 return 0
 
         try:
+            assert self._imap
             self._imap.select(folder)
             _, data = self._imap.search(None, 'UNSEEN')
             return len(data[0].split())
@@ -242,6 +245,7 @@ class EmailClient:
                 return []
 
         try:
+            assert self._imap
             self._imap.select(folder)
 
             # Search for emails
@@ -260,7 +264,7 @@ class EmailClient:
                 _, msg_data = self._imap.fetch(eid, '(RFC822)')
                 if msg_data and msg_data[0]:
                     raw_email = msg_data[0][1]
-                    email_msg = self._parse_email(raw_email, eid.decode())
+                    email_msg = self._parse_email(raw_email, eid.decode())  # type: ignore
                     emails.append(email_msg)
 
             return emails
@@ -282,7 +286,7 @@ class EmailClient:
                 msg = MIMEMultipart('alternative')
                 msg.attach(MIMEText(body, 'html'))
             else:
-                msg = MIMEText(body)
+                msg = MIMEText(body)  # type: ignore
 
             msg['Subject'] = subject
             msg['From'] = self.config.username
@@ -295,7 +299,7 @@ class EmailClient:
                     self.config.smtp_port,
                 )
             else:
-                server = smtplib.SMTP(
+                server = smtplib.SMTP(  # type: ignore
                     self.config.smtp_server,
                     self.config.smtp_port,
                 )
@@ -318,8 +322,9 @@ class EmailClient:
                 return False
 
         try:
+            assert self._imap
             self._imap.select(folder)
-            self._imap.store(email_id.encode(), '+FLAGS', '\\Seen')
+            self._imap.store(email_id.encode(), '+FLAGS', '\\Seen')  # type: ignore
             return True
         except Exception as e:
             logger.error(f"Failed to mark as read: {e}")
@@ -400,6 +405,7 @@ class EmailAction(BaseAction):
     async def _check_inbox(self, params: dict) -> str:
         """Check inbox."""
         limit = params.get("limit", 5)
+        assert self._client
         emails = self._client.get_emails(limit=limit)
 
         if not emails:
@@ -421,6 +427,7 @@ class EmailAction(BaseAction):
 
     async def _check_unread(self) -> str:
         """Check unread emails only."""
+        assert self._client
         emails = self._client.get_emails(unread_only=True, limit=10)
 
         if not emails:
@@ -448,6 +455,7 @@ class EmailAction(BaseAction):
         if not subject and not body:
             return "Please provide a subject and/or body for the email."
 
+        assert self._client
         success = self._client.send_email(to, subject or "(No subject)", body)
 
         if success:
@@ -457,6 +465,7 @@ class EmailAction(BaseAction):
 
     async def _get_count(self) -> str:
         """Get unread email count."""
+        assert self._client
         count = self._client.get_unread_count()
         if count == 0:
             return "✅ No unread emails"

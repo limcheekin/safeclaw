@@ -4,10 +4,7 @@ These tests import modules directly to avoid triggering the full
 safeclaw import chain which requires all dependencies.
 """
 
-import asyncio
 import importlib.util
-import ipaddress
-import shlex
 import socket
 import sys
 from pathlib import Path
@@ -36,7 +33,7 @@ class TestShellValidation:
     @pytest.fixture(autouse=True)
     def _load_shell(self):
         # We need the base action class first
-        base_mod = _load_module(
+        _load_module(
             "safeclaw.actions.base",
             SRC / "safeclaw" / "actions" / "base.py",
         )

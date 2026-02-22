@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional
 
-import dateparser
+import dateparser  # type: ignore
 from rapidfuzz import fuzz
 
 if TYPE_CHECKING:

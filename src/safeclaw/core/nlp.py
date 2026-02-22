@@ -1,7 +1,7 @@
 """
-SafeClaw NLP - Named Entity Recognition with spaCy.
+SafeClaw NLP - Named Entity Recognition using spaCy.
 
-No LLM required - uses trained statistical models.
+ML without LLMs - runs locally.
 """
 
 import logging
@@ -9,17 +9,12 @@ from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
+# spaCy
 try:
     import spacy
     HAS_SPACY = True
 except ImportError:
     HAS_SPACY = False
-
-try:
-    from langdetect import detect_langs
-    HAS_LANGDETECT = True
-except ImportError:
-    HAS_LANGDETECT = False
 
 
 @dataclass
@@ -30,99 +25,94 @@ class Entity:
     start: int
     end: int
 
-    @property
-    def label_name(self) -> str:
-        labels = {
-            "PERSON": "Person", "ORG": "Organization", "GPE": "Location",
-            "LOC": "Location", "DATE": "Date", "TIME": "Time",
-            "MONEY": "Money", "PERCENT": "Percentage", "PRODUCT": "Product",
-            "EVENT": "Event", "NORP": "Group", "FAC": "Facility",
-        }
-        return labels.get(self.label, self.label)
-
 
 @dataclass
 class NLPResult:
     """NLP analysis result."""
-    text: str
-    entities: list[Entity]
+    entities: list[str] | None = None  # type: ignore
+    sentences: list[str] | None = None  # type: ignore
     language: str | None = None
-    noun_phrases: list[str] = None
-
-    def __post_init__(self):
-        if self.noun_phrases is None:
-            self.noun_phrases = []
-
-    @property
-    def people(self) -> list[str]:
-        return [e.text for e in self.entities if e.label == "PERSON"]
-
-    @property
-    def organizations(self) -> list[str]:
-        return [e.text for e in self.entities if e.label == "ORG"]
-
-    @property
-    def locations(self) -> list[str]:
-        return [e.text for e in self.entities if e.label in ("GPE", "LOC")]
-
-    @property
-    def dates(self) -> list[str]:
-        return [e.text for e in self.entities if e.label == "DATE"]
 
 
 class NLPProcessor:
-    """NLP processor using spaCy for NER."""
+    """spaCy-based NLP processor."""
 
     def __init__(self, model: str = "en_core_web_sm"):
-        self._nlp = None
-        self._model = model
+        """
+        Initialize NLP.
+
+        Args:
+            model: spaCy model name
+        """
+        self._model = None
+        self._model_name = model
         if HAS_SPACY:
             self._load_model()
 
     def _load_model(self) -> bool:
         try:
-            self._nlp = spacy.load(self._model)
+            if not spacy.util.is_package(self._model_name):
+                logger.warning(f"spaCy model {self._model_name} not found. Attempting download...")
+                spacy.cli.download(self._model_name)  # type: ignore
+
+            self._model = spacy.load(self._model_name)
+            logger.info(f"Loaded spaCy model: {self._model_name}")
             return True
-        except OSError:
-            logger.warning(f"spaCy model not found. Run: python -m spacy download {self._model}")
+        except Exception as e:
+            logger.warning(f"Failed to load spaCy: {e}")
             return False
 
     @property
     def is_available(self) -> bool:
-        return HAS_SPACY and self._nlp is not None
+        return HAS_SPACY and self._model is not None
 
-    def process(self, text: str) -> NLPResult:
-        """Extract entities from text."""
+    def analyze(self, text: str) -> NLPResult:
+        """
+        Analyze text.
+
+        Args:
+            text: Input text
+        """
         if not self.is_available:
-            return NLPResult(text=text, entities=[])
+            return NLPResult()
 
-        doc = self._nlp(text)
-        entities = [
-            Entity(text=ent.text, label=ent.label_, start=ent.start_char, end=ent.end_char)
-            for ent in doc.ents
-        ]
-        noun_phrases = [chunk.text for chunk in doc.noun_chunks]
+        try:
+            doc = self._model(text)  # type: ignore
 
-        language = None
-        if HAS_LANGDETECT and text.strip():
-            try:
-                langs = detect_langs(text)
-                language = langs[0].lang if langs else None
-            except Exception:
-                pass
+            entities = [
+                f"{ent.text} ({ent.label_})"
+                for ent in doc.ents
+            ]
 
-        return NLPResult(text=text, entities=entities, language=language, noun_phrases=noun_phrases)
+            sentences = [
+                sent.text.strip()
+                for sent in doc.sents
+            ]
 
-    def extract_entities(self, text: str) -> list[Entity]:
-        return self.process(text).entities
+            return NLPResult(
+                entities=entities,
+                sentences=sentences,
+                language=doc.lang_,
+            )
+        except Exception as e:
+            logger.error(f"NLP analysis failed: {e}")
+            return NLPResult()
 
-    def get_entity_summary(self, text: str) -> dict[str, list[str]]:
-        """Group entities by type."""
-        result = self.process(text)
-        summary: dict[str, list[str]] = {}
-        for e in result.entities:
-            if e.label not in summary:
-                summary[e.label] = []
-            if e.text not in summary[e.label]:
-                summary[e.label].append(e.text)
-        return summary
+    def extract_entities(self, text: str, labels: list[str] | None = None) -> list[str]:
+        """Extract specific entities."""
+        if not self.is_available:
+            return []
+
+        try:
+            doc = self._model(text)  # type: ignore
+            entities = []
+
+            for ent in doc.ents:
+                if labels and ent.label_ not in labels:
+                    continue
+                entities.append(ent.text)
+
+            return entities
+        except Exception as e:
+            logger.error(f"Entity extraction failed: {e}")
+            return []
