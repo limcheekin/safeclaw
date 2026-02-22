@@ -1,0 +1,9 @@
+---
+apiVersion: api.cerbos.dev/v1
+resourcePolicy:
+  version: default
+  resource: weather
+  rules:
+    - actions: ["read"]
+      roles: ["user", "admin"]
+      effect: EFFECT_ALLOW
