@@ -44,8 +44,8 @@ class SmartHomePlugin(BasePlugin):
     )
 
     def __init__(self) -> None:
-        self.hue_bridge = None
-        self.mqtt_client = None
+        self.hue_bridge: Any | None = None
+        self.mqtt_client: Any | None = None
         self._config: dict = {}
 
     def on_load(self, engine: Any) -> None:
