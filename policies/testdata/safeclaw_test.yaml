@@ -45,12 +45,12 @@ tests:
     expected:
       - principal: user1
         resource: weather_ny
-        action: read
-        effect: EFFECT_ALLOW
+        actions:
+          read: EFFECT_ALLOW
       - principal: admin
         resource: weather_ny
-        action: read
-        effect: EFFECT_ALLOW
+        actions:
+          read: EFFECT_ALLOW
 
   - name: Crawl Check (Github)
     input:
@@ -60,12 +60,12 @@ tests:
     expected:
       - principal: user1
         resource: crawl_github
-        action: read
-        effect: EFFECT_ALLOW
+        actions:
+          read: EFFECT_ALLOW
       - principal: admin
         resource: crawl_github
-        action: read
-        effect: EFFECT_ALLOW
+        actions:
+          read: EFFECT_ALLOW
 
   - name: Crawl Check (Evil)
     input:
@@ -75,8 +75,8 @@ tests:
     expected:
       - principal: user1
         resource: crawl_evil
-        action: read
-        effect: EFFECT_DENY
+        actions:
+          read: EFFECT_DENY
 
   - name: Document Owner Check
     input:
@@ -86,21 +86,15 @@ tests:
     expected:
       - principal: user1
         resource: doc1
-        action: read
-        effect: EFFECT_ALLOW
-      - principal: user1
-        resource: doc1
-        action: update
-        effect: EFFECT_ALLOW
+        actions:
+          read: EFFECT_ALLOW
+          update: EFFECT_ALLOW
       - principal: user2
         resource: doc1
-        action: read
-        effect: EFFECT_DENY
-      - principal: user2
-        resource: doc1
-        action: update
-        effect: EFFECT_DENY
+        actions:
+          read: EFFECT_DENY
+          update: EFFECT_DENY
       - principal: admin
         resource: doc1
-        action: read
-        effect: EFFECT_ALLOW
+        actions:
+          read: EFFECT_ALLOW
