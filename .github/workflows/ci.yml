@@ -49,4 +49,4 @@ jobs:
         cerbos --version
 
     - name: Test Policies
-      run: cerbos compile policies/ --test=policies/testdata
+      run: cerbos compile policies/ --tests=policies/testdata

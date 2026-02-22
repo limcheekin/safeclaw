@@ -36,7 +36,7 @@
 **Mitigation:**
 - Check `audit_logger` output for `reason`.
 - Check `policies/resource_policies.yaml` for logic errors.
-- Run policy tests: `cerbos compile policies/ --test=policies/testdata`.
+- Run policy tests: `cerbos compile policies/ --tests=policies/testdata`.
 - Rollback policy changes.
 
 ## Operations
