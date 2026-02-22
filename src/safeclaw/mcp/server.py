@@ -1,7 +1,8 @@
 import contextlib
 import functools
 import logging
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from cerbos.sdk.model import Resource
 from fastmcp import Context, FastMCP
