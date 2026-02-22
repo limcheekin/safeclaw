@@ -24,7 +24,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install .[all,mcp]
+        pip install -e .[all,mcp]
         pip install ruff mypy pytest pytest-asyncio pip-audit tornado
 
     - name: Lint with Ruff
@@ -39,7 +39,7 @@ jobs:
         PYTHONPATH: src
 
     - name: Security Audit
-      run: pip-audit
+      run: pip-audit --skip-editable
 
     - name: Install Cerbos CLI
       run: |
