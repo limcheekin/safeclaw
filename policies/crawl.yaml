@@ -12,4 +12,4 @@ resourcePolicy:
       effect: EFFECT_ALLOW
       condition:
         match:
-          expr: request.resource.attr.url.matches('^https://(www\.)?(github\.com|wikipedia\.org)')
+          expr: request.resource.attr.url.matches('^https://(www\\\\.)?(github\\\\.com|wikipedia\\\\.org)')
