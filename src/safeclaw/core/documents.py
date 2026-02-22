@@ -232,7 +232,7 @@ class DocumentReader:
                 error="python-docx not installed. Run: pip install python-docx",
             )
 
-        doc = DocxDocument(path)
+        doc = DocxDocument(str(path))
         text_parts = []
 
         # Extract paragraphs

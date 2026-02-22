@@ -62,6 +62,7 @@ class NotificationManager:
         self.rate_limit = rate_limit
         self._last_notification = 0.0
         self._history: list[dict[str, Any]] = []
+        self._notifier: DesktopNotifier | None = None
 
         if HAS_NOTIFIER:
             self._notifier = DesktopNotifier(app_name=app_name)
@@ -118,8 +119,8 @@ class NotificationManager:
                 title=notification.title,
                 message=notification.message,
                 urgency=urgency,
-                buttons=buttons if buttons else None,
-                sound=notification.sound,
+                buttons=buttons,
+                sound=notification.sound,  # type: ignore
             )
 
             logger.debug(f"Notification sent: {notification.title}")

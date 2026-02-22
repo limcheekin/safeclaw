@@ -216,7 +216,7 @@ class Crawler:
             # Extract links
             base_url = url
             for link in soup.find_all("a", href=True):
-                href = link["href"]
+                href = str(link["href"])
                 absolute_url = urljoin(base_url, href)
                 # Filter out non-http links
                 if absolute_url.startswith(("http://", "https://")):
@@ -227,7 +227,7 @@ class Crawler:
 
             # Extract images
             for img in soup.find_all("img", src=True):
-                src = img["src"]
+                src = str(img["src"])
                 absolute_url = urljoin(base_url, src)
                 if absolute_url.startswith(("http://", "https://")):
                     result.images.append(absolute_url)
@@ -291,8 +291,6 @@ class Crawler:
                 # Check pattern
                 if pattern_re and not pattern_re.search(url):
                     continue
-
-                self._visited.add(url)
                 logger.debug(f"Crawling: {url} (depth={depth})")
 
                 # Fetch page

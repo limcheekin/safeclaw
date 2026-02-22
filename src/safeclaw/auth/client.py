@@ -29,6 +29,8 @@ breaker = pybreaker.CircuitBreaker(
 
 class AuthClient:
     _instance = None
+    client: AsyncCerbosClient
+    redis: redis.Redis
 
     def __new__(cls):
         if cls._instance is None:
@@ -103,7 +105,7 @@ class AuthClient:
             async def _call_pdp():
                 with tracer.start_as_current_span("cerbos_check"):
                     with CERBOS_CALL_DURATION_SECONDS.labels(action=action, resource=resource.kind).time():
-                        return await self.client.is_allowed(action, principal, resource)
+                        return await self.client.is_allowed(action, principal, resource)  # type: ignore
 
             decision = await breaker.call_async(_call_pdp)
             latency = (time.time() - start_time) * 1000

@@ -323,7 +323,7 @@ class Memory:
                 "metadata": json.loads(row["metadata"]) if row["metadata"] else None,
                 "created_at": row["created_at"],
             }
-            for row in reversed(rows)
+            for row in reversed(list(rows))
         ]
 
     # Preferences

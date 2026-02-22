@@ -55,7 +55,8 @@ class CalendarParser:
             self.events = []
             for component in cal.walk():
                 if component.name == "VEVENT":
-                    self._parse_event(component)
+                    if isinstance(component, Event):
+                        self._parse_event(component)
 
             # Sort by start date
             self.events.sort(key=lambda x: x.start)

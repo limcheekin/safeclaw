@@ -9,6 +9,7 @@ class MCPService:
     Wrapper around SafeClaw engine to be used by MCP server.
     """
     _instance = None
+    engine: SafeClaw
 
     def __new__(cls):
         if cls._instance is None:
