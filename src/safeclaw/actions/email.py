@@ -1,4 +1,3 @@
-import email.utils
 """
 SafeClaw Email Action - IMAP/SMTP email integration.
 
@@ -6,6 +5,7 @@ No API keys required - uses standard email protocols.
 """
 
 import email
+import email.utils
 import imaplib
 import logging
 import re
