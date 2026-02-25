@@ -1,0 +1,12 @@
+{
+    "mcpServers": {
+        "safeclaw": {
+            "url": "http://localhost:8000/sse",
+            "transport": "sse",
+            "env": {
+                "x-user-id": "dev_admin",
+                "x-user-role": "admin,user"
+            }
+        }
+    }
+}
