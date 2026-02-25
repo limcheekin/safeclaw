@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install python dependencies
-COPY pyproject.toml .
+COPY pyproject.toml README.md ./
 # We don't have a lock file yet, so install from pyproject.toml
 # Installing optional dependencies as well
 RUN pip install --no-cache-dir .[all,mcp]

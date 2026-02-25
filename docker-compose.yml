@@ -29,7 +29,7 @@ services:
       - "3593:3593"
     volumes:
       - ./policies:/policies
-    command: server --config=/policies/config.yaml --set=storage.disk.directory=/policies --set=server.httpListenAddr=:3592 --set=server.grpcListenAddr=:3593
+    command: server --set=storage.disk.directory=/policies --set=server.httpListenAddr=:3592 --set=server.grpcListenAddr=:3593
 
   redis:
     image: redis:7-alpine
