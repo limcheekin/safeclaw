@@ -5,7 +5,7 @@ import time
 
 import pybreaker
 import redis.asyncio as redis
-from cerbos.sdk.grpc.client import AsyncCerbosClient
+from cerbos.sdk.client import AsyncCerbosClient
 from cerbos.sdk.model import Principal, Resource
 
 from safeclaw.auth.audit import audit_logger
