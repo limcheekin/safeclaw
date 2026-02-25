@@ -1,3 +1,4 @@
+import asyncio
 import os
 
 import httpx
@@ -5,8 +6,6 @@ import pytest
 
 BASE_URL = os.getenv("APP_URL", "http://localhost:8000")
 CERBOS_URL = os.getenv("CERBOS_BASE_URL", "http://localhost:3592")
-
-import asyncio
 
 @pytest.mark.skipif(not os.getenv("RUN_INTEGRATION_TESTS"), reason="Skipping integration tests")
 @pytest.mark.asyncio
