@@ -4,7 +4,7 @@ This guide describes how to connect the Antigravity IDE to the SafeClaw MCP Serv
 
 ## Phase 1: Connecting Antigravity IDE to the MCP Server
 
-The Antigravity IDE natively supports the latest Model Context Protocol (MCP) integrations using standard `sse` and `stdio` transports. Since SafeClaw's MCP server is exposed over HTTP/SSE via FastMCP, you connect it using the IDE's configuration file.
+The Antigravity IDE requires Model Context Protocol (MCP) servers to communicate over standard input/output (STDIO). Since SafeClaw's MCP server is exposed over HTTP/SSE via FastMCP, you must use a bridge tool to connect them via the global configuration file.
 
 ### Prerequisites
 
@@ -15,16 +15,22 @@ docker compose up -d
 
 ### Steps
 
-1. Navigate to the local `.gemini` state directory in your workspace:
-2. Create or open the `.gemini/mcp.json` file.
-3. Configure the `mcpServers` dict to map the name to your local SafeClaw SSE endpoint using the `sse` transport layer.
+1. Locate your global Antigravity configuration file:
+   - **Linux/macOS**: `~/.gemini/antigravity/mcp_config.json`
+   - **Windows**: `%USERPROFILE%\.gemini\antigravity\mcp_config.json`
+2. Create or open the `mcp_config.json` file.
+3. Configure the `mcpServers` dict. Use the `mcp-remote` utility as a bridge to translate the IDE's STDIO messages to the server's SSE transport.
 
 ```json
 {
     "mcpServers": {
         "safeclaw": {
-            "url": "http://localhost:8000/sse",
-            "transport": "sse",
+            "command": "npx",
+            "args": [
+                "-y",
+                "mcp-remote",
+                "http://localhost:8000/sse"
+            ],
             "env": {
                 "x-user-id": "dev_admin",
                 "x-user-role": "admin,user"
@@ -79,4 +85,4 @@ To systematically validate the integration manually, initiate a chat session in 
 **Prompt:** "Flush the Cerbos decision cache on the SafeClaw system."
 **Verification:** The `admin_flush_cache` command will execute successfully, clearing any stale role decisions enforced temporarily by Redis cache.
 
-> **Note on Permissions**: The Cerbos integration enforces strict authorization on every tool execute call. To manually test through the IDE, Antigravity requires the environment variables (`x-user-id` and `x-user-role`) provided in Phase 1's `mcp.json`. Without these variables, the server will intentionally yield a fail-closed PermissionError denying execution.
+> **Note on Permissions**: The Cerbos integration enforces strict authorization on every tool execute call. To manually test through the IDE, Antigravity requires the environment variables (`x-user-id` and `x-user-role`) provided in Phase 1's `mcp_config.json`. Without these variables, the server will intentionally yield a fail-closed PermissionError denying execution.
