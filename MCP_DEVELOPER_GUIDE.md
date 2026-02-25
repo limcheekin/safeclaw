@@ -10,7 +10,7 @@ The Antigravity IDE natively supports the latest Model Context Protocol (MCP) in
 
 You must have the SafeClaw core services running in Docker Compose to expose the FastMCP Server on defined port 8000:
 ```bash
-docker compose up -d app cerbos redis
+docker compose up -d
 ```
 
 ### Steps
@@ -24,11 +24,17 @@ docker compose up -d app cerbos redis
     "mcpServers": {
         "safeclaw": {
             "url": "http://localhost:8000/sse",
-            "transport": "sse"
+            "transport": "sse",
+            "env": {
+                "x-user-id": "dev_admin",
+                "x-user-role": "admin,user"
+            }
         }
     }
 }
 ```
+
+By providing `env` variables matching the Cerbos header introspection keys (`x-user-id` and `x-user-role`), FastMCP's SSE HTTP connections will forward these properties enabling the server connection to spoof a recognized developer identity safely without managing full JWT tokens during local IDE testing.
 
 4. Antigravity IDE constantly monitors this file and will hot-reload its MCP connections. The SafeClaw tools will dynamically load into the Assistant's native toolbox (visible as internal tools).
 
@@ -73,4 +79,4 @@ To systematically validate the integration manually, initiate a chat session in 
 **Prompt:** "Flush the Cerbos decision cache on the SafeClaw system."
 **Verification:** The `admin_flush_cache` command will execute successfully, clearing any stale role decisions enforced temporarily by Redis cache.
 
-> **Note on Permissions**: If you manually test through the IDE and Antigravity IDE connects as anonymous without providing a signed JWT Header, the server's Cerbos integration will intentionally yield a fail-closed PermissionError due to safety guardrails. Providing the right Header map in the `mcp.json` proxy allows it to spoof standard headers where JWT isn't native.
+> **Note on Permissions**: The Cerbos integration enforces strict authorization on every tool execute call. To manually test through the IDE, Antigravity requires the environment variables (`x-user-id` and `x-user-role`) provided in Phase 1's `mcp.json`. Without these variables, the server will intentionally yield a fail-closed PermissionError denying execution.
