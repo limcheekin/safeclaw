@@ -67,6 +67,7 @@ Transform SafeClaw into a production-grade MCP (Model Context Protocol) server w
 - Use `Dockerfile` to build the image.
 - Configure via Environment Variables (see `src/safeclaw/config/settings.py`).
 - Ensure Cerbos policy files are mounted or baked into the image.
+- Refer to the [Deployment Guide](DEPLOYMENT.md) for more details.
 
 ## License
 MIT
