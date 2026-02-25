@@ -23,6 +23,8 @@ logger = logging.getLogger(__name__)
 @contextlib.asynccontextmanager
 async def server_lifespan(server: FastMCP):
     """Initialize resources on startup and cleanup on shutdown."""
+    import safeclaw.mcp.tools
+    import safeclaw.mcp.tools
     await service.initialize()
     logger.info("MCP Server started")
     yield
@@ -31,6 +33,8 @@ async def server_lifespan(server: FastMCP):
 
 
 # Initialize FastMCP
+
+
 mcp = FastMCP(
     settings.MCP_SERVER_NAME,
     lifespan=server_lifespan,

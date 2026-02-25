@@ -1,7 +1,7 @@
 from safeclaw.mcp.server import mcp
 
 # Expose ASGI app for uvicorn
-app = mcp.http_app()
+app = mcp.http_app(transport='sse')
 
 def main():
     """Run the MCP server."""
