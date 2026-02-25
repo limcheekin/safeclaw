@@ -23,8 +23,6 @@ logger = logging.getLogger(__name__)
 @contextlib.asynccontextmanager
 async def server_lifespan(server: FastMCP):
     """Initialize resources on startup and cleanup on shutdown."""
-    import safeclaw.mcp.tools
-    import safeclaw.mcp.tools
     await service.initialize()
     logger.info("MCP Server started")
     yield
@@ -91,3 +89,6 @@ def authorize(action: str, resource_kind: str):
             return await func(*args, **kwargs)
         return wrapper
     return decorator
+
+# Register tools
+import safeclaw.mcp.tools

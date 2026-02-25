@@ -97,6 +97,6 @@ async def get_principal(ctx: Context | None = None) -> Principal:
 
     return Principal(
         id=principal_id,
-        roles=set(roles),
+        roles=list(set(roles)),
         attr=attr,
     )
