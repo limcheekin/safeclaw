@@ -62,8 +62,21 @@ SafeClaw is configured entirely via environment variables. Create a `.env` file 
 - `CERBOS_CIRCUIT_BREAKER_FAILURES`: Number of consecutive failures before opening the circuit breaker. Default: `5`.
 
 ### Principal Enrichment (Auth/JWT)
+SafeClaw uses JSON Web Tokens (JWT) for authentication and principal extraction.
+
+#### Generating a JWT Key Pair (RS256)
+If you do not already have an authentication provider or a key pair, you can generate one for use between SafeClaw and your clients using OpenSSL:
+```bash
+# 1. Generate the private key
+openssl genrsa -out private.pem 2048
+
+# 2. Extract the public key
+openssl rsa -in private.pem -pubout -out public.pem
+```
+You will use the **private key** (`private.pem`) to cryptographically sign tokens for your clients (like LocalAI), and provide the **public key** (`public.pem`) to SafeClaw so it can verify those tokens.
+
 - `PRINCIPAL_ATTR_SOURCE`: Source of principal attributes (`jwt`, `introspect`, `user_service`). Default: `jwt`.
-- `JWT_PUBLIC_KEY`: Public key to verify JWTs (if `jwt` is used).
+- `JWT_PUBLIC_KEY`: The public key to verify JWT signatures. You must provide the entire contents of your public key (e.g., `public.pem`), including the `-----BEGIN PUBLIC KEY-----` and `-----END PUBLIC KEY-----` markers. If providing this in a `.env` file or `docker-compose.yml`, make sure to correctly format or quote the multiline string.
 - `USER_SERVICE_URL`: URL to fetch user details (if `user_service` is used).
 - `AUTH_FALLBACK_MODE`: Behavior when auth context is missing (`deny` or `allow_with_logs`). Default: `deny`.
 

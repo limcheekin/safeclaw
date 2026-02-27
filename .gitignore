@@ -26,3 +26,8 @@ env/
 # Environment files
 .env
 .env.local
+
+# For MCP JWT Generation
+jwt.txt
+private.pem
+public.pem
