@@ -14,6 +14,20 @@ class RewriteSSEMiddleware:
     async def __call__(self, scope, receive, send):
         if scope.get("type") == "http" and scope.get("method") == "POST" and scope.get("path") == "/sse":
             scope["path"] = "/messages"
+            
+            # LocalAI drops the required session_id parameter dynamically sent in the SSE endpoint event. 
+            # We intercept FastMCP's internal connection state to get the active session ID.
+            fastmcp_server = getattr(self.app.state, "fastmcp_server", None)
+            if fastmcp_server and hasattr(fastmcp_server, "_sse_transport"):
+                writers = getattr(fastmcp_server._sse_transport, "_read_stream_writers", {})
+                if writers:
+                    # Get the first active SSE session
+                    session_id = str(list(writers.keys())[0])
+                    qs = scope.get("query_string", b"").decode("utf-8")
+                    if "session_id" not in qs and "sessionId" not in qs:
+                        new_qs = f"session_id={session_id}" if not qs else f"{qs}&session_id={session_id}"
+                        scope["query_string"] = new_qs.encode("utf-8")
+                        
         await self.app(scope, receive, send)
 
 # Expose ASGI app for uvicorn
