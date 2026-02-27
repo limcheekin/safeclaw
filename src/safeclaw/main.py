@@ -41,7 +41,18 @@ class RewriteSSEMiddleware:
                         new_qs = f"session_id={session_id}" if not qs else f"{qs}&session_id={session_id}"
                         scope["query_string"] = new_qs.encode("utf-8")
                         
-        await self.app(scope, receive, send)
+        try:
+            await self.app(scope, receive, send)
+        except Exception as e:
+            if "ClosedResourceError" in str(type(e)):
+                # LocalAI sometimes drops the SSE GET stream right after sending the POST request,
+                # causing anyio to throw ClosedResourceError when FastMCP tries to stream the response.
+                if scope.get("type") == "http":
+                    from starlette.responses import Response
+                    response = Response("Accepted despite closed stream", status_code=202)
+                    await response(scope, receive, send)
+            else:
+                raise
 
 # Expose ASGI app for uvicorn
 app = mcp.http_app(transport='sse', middleware=[Middleware(RewriteSSEMiddleware)])
