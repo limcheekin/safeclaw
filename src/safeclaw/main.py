@@ -37,7 +37,12 @@ class RewriteSSEMiddleware:
                     # Get the first active SSE session
                     session_id = str(list(writers.keys())[0])
                     qs = scope.get("query_string", b"").decode("utf-8")
-                    if "session_id" not in qs and "sessionId" not in qs:
+                    if "sessionId" in qs and "session_id" not in qs:
+                        # Translate sessionId -> session_id for FastMCP
+                        qs = qs.replace("sessionId=", "session_id=")
+                        scope["query_string"] = qs.encode("utf-8")
+                    elif "session_id" not in qs:
+                        # Inject first active ID if missing
                         new_qs = f"session_id={session_id}" if not qs else f"{qs}&session_id={session_id}"
                         scope["query_string"] = new_qs.encode("utf-8")
                         
