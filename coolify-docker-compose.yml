@@ -1,0 +1,44 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    image: safeclaw-mcp:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=production
+      - LOG_LEVEL=INFO
+      - CERBOS_BASE_URL=http://cerbos:3592
+      - CERBOS_CACHE_BACKEND=redis://redis:6379/0
+      - REDIS_URL=redis://redis:6379/0
+      - MCP_SERVER_NAME=safeclaw-mcp
+      - PRINCIPAL_ATTR_SOURCE=jwt
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY:-your-jwt-public-key}
+    depends_on:
+      - cerbos
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/sse"] # Check SSE endpoint or root
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  cerbos:
+    image: ghcr.io/cerbos/cerbos:0.51.0
+    ports:
+      - "3592:3592"
+      - "3593:3593"
+    volumes:
+      - /home/limcheekin/docker/volumes/safeclaw-mcp/policies:/policies
+    command: server --set=storage.disk.directory=/policies --set=server.httpListenAddr=:3592 --set=server.grpcListenAddr=:3593
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
