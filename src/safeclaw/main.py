@@ -1,7 +1,23 @@
 from safeclaw.mcp.server import mcp
+from starlette.middleware import Middleware
+
+class RewriteSSEMiddleware:
+    """
+    Middleware to fix LocalAI MCP compatibility.
+    LocalAI sends POST requests for MCP message initialization to the exact same URL 
+    it used for SSE (e.g., /sse). FastMCP by default expects POSTs at /messages.
+    This rewrites the internal ASGI path to /messages so FastMCP processes it.
+    """
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") == "http" and scope.get("method") == "POST" and scope.get("path") == "/sse":
+            scope["path"] = "/messages"
+        await self.app(scope, receive, send)
 
 # Expose ASGI app for uvicorn
-app = mcp.http_app(transport='sse')
+app = mcp.http_app(transport='sse', middleware=[Middleware(RewriteSSEMiddleware)])
 
 def main():
     """Run the MCP server."""

@@ -102,4 +102,13 @@ curl http://192.168.1.111:8880/mcp/v1/chat/completions \
 
 If configured correctly, the model will access the SafeClaw MCP tools, process the request, and return a response detailing the tools it can use or performing a specific action based on the tools you prompt it to use.
 
+## Troubleshooting
+
+### Error: "Method Not Allowed" during initialization
+If you see an error in the LocalAI console similar to:
+`Failed to connect to MCP server error=calling "initialize": sending "initialize": Method Not Allowed url="http://192.168.1.111:9994/sse"`
+
+This usually occurs if the SafeClaw server has not been updated with the LocalAI compatibility middleware. Ensure you have the latest SafeClaw code (which includes `RewriteSSEMiddleware`) and have restarted the MCP server. This middleware natively routes the `POST /sse` requests sent by LocalAI correctly.
+
+### Error: Authentication/Invalid JWT
 If you encounter an authentication error, verify that the JWT token is valid, hasn't expired, and was signed correctly to match the `JWT_PUBLIC_KEY` configured in your SafeClaw deployment.
