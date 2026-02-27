@@ -41,16 +41,29 @@ class RewriteSSEMiddleware:
                         new_qs = f"session_id={session_id}" if not qs else f"{qs}&session_id={session_id}"
                         scope["query_string"] = new_qs.encode("utf-8")
                         
+        response_started = False
+        async def wrapped_send(message: dict):
+            nonlocal response_started
+            if message["type"] == "http.response.start":
+                response_started = True
+            await send(message)
+
         try:
-            await self.app(scope, receive, send)
+            await self.app(scope, receive, wrapped_send)
         except Exception as e:
             if "ClosedResourceError" in str(type(e)):
                 # LocalAI sometimes drops the SSE GET stream right after sending the POST request,
                 # causing anyio to throw ClosedResourceError when FastMCP tries to stream the response.
                 if scope.get("type") == "http":
-                    from starlette.responses import Response
-                    response = Response("Accepted despite closed stream", status_code=202)
-                    await response(scope, receive, send)
+                    if not response_started:
+                        from starlette.responses import Response
+                        response = Response("Accepted despite closed stream", status_code=202)
+                        await response(scope, receive, send)
+                    else:
+                        # Request is already streaming (e.g. GET /sse). Suppress the error cleanly.
+                        pass
+                else:
+                    raise
             else:
                 raise
 
