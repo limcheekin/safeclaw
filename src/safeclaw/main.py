@@ -17,7 +17,9 @@ class RewriteSSEMiddleware:
             
             # LocalAI drops the required session_id parameter dynamically sent in the SSE endpoint event. 
             # We intercept FastMCP's internal connection state to get the active session ID.
-            fastmcp_server = getattr(self.app.state, "fastmcp_server", None)
+            starlette_app = scope.get("app")
+            fastmcp_server = getattr(starlette_app.state, "fastmcp_server", None) if starlette_app and hasattr(starlette_app, "state") else None
+            
             if fastmcp_server and hasattr(fastmcp_server, "_sse_transport"):
                 writers = getattr(fastmcp_server._sse_transport, "_read_stream_writers", {})
                 if writers:
