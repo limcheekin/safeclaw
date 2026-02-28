@@ -16,7 +16,7 @@ async def test_cerbos_health():
                 resp = await client.get(f"{CERBOS_URL}/_cerbos/health", timeout=2.0)
                 if resp.status_code == 200:
                     return
-            except (httpx.ConnectError, httpx.ReadError):
+            except (httpx.ConnectError, httpx.ReadError, httpx.RemoteProtocolError):
                 pass
             await asyncio.sleep(2)
         pytest.fail("Cerbos is not reachable")

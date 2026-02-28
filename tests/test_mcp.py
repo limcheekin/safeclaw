@@ -22,7 +22,7 @@ async def test_get_weather_allowed():
         mock_execute.return_value = "Weather in New York: Sunny"
 
         ctx = mock_context()
-        result = await get_weather.fn(location="New York", ctx=ctx)
+        result = await get_weather(location="New York", ctx=ctx)
 
         assert "Sunny" in result
         mock_check.assert_called_once()
@@ -37,7 +37,7 @@ async def test_get_weather_denied():
         ctx = mock_context()
 
         with pytest.raises(ValueError, match="Permission denied"):
-            await get_weather.fn(location="New York", ctx=ctx)
+            await get_weather(location="New York", ctx=ctx)
 
 @pytest.mark.asyncio
 async def test_crawl_url_allowed():
@@ -48,7 +48,7 @@ async def test_crawl_url_allowed():
         mock_execute.return_value = "Links found"
 
         ctx = mock_context()
-        result = await crawl_url.fn(url="https://example.com", ctx=ctx)
+        result = await crawl_url(url="https://example.com", ctx=ctx)
 
         assert result == "Links found"
 
@@ -61,7 +61,7 @@ async def test_summarize_allowed():
         mock_execute.return_value = "Summary"
 
         ctx = mock_context()
-        result = await summarize_content.fn(target="https://example.com", ctx=ctx)
+        result = await summarize_content(target="https://example.com", ctx=ctx)
 
         assert result == "Summary"
 
