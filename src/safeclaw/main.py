@@ -13,7 +13,7 @@ class RewriteSSEMiddleware:
 
     async def __call__(self, scope, receive, send):
         if scope.get("type") == "http" and scope.get("method") == "POST" and scope.get("path") == "/sse":
-            scope["path"] = "/messages"
+            scope["path"] = "/messages/"
             
             # LocalAI drops the required session_id parameter dynamically sent in the SSE endpoint event. 
             # We intercept FastMCP's internal connection state to get the active session ID.
@@ -22,7 +22,7 @@ class RewriteSSEMiddleware:
             sse_transport = None
             if starlette_app and hasattr(starlette_app, "routes"):
                 for route in starlette_app.routes:
-                    if getattr(route, "path", "") == "/messages":
+                    if getattr(route, "path", "") == "/messages/":
                         handler = getattr(route, "app", None)
                         # Check direct or wrapped via RequireAuthMiddleware
                         if hasattr(handler, "__self__"):
