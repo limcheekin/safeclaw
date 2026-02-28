@@ -22,7 +22,7 @@ class RewriteSSEMiddleware:
             sse_transport = None
             if starlette_app and hasattr(starlette_app, "routes"):
                 for route in starlette_app.routes:
-                    if getattr(route, "path", "") == "/messages/":
+                    if getattr(route, "path", "") in ("/messages", "/messages/"):
                         handler = getattr(route, "app", None)
                         # Check direct or wrapped via RequireAuthMiddleware
                         if hasattr(handler, "__self__"):
