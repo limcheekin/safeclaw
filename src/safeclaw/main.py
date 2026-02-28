@@ -13,7 +13,7 @@ class RewriteSSEMiddleware:
 
     async def __call__(self, scope, receive, send):
         if scope.get("type") == "http" and scope.get("method") == "POST" and scope.get("path") == "/sse":
-            scope["path"] = "/messages/"
+            scope["path"] = "/messages"
             
             # LocalAI drops the required session_id parameter dynamically sent in the SSE endpoint event. 
             # We intercept FastMCP's internal connection state to get the active session ID.
@@ -51,6 +51,10 @@ class RewriteSSEMiddleware:
             nonlocal response_started
             if message["type"] == "http.response.start":
                 response_started = True
+                headers = message.setdefault("headers", [])
+                has_ct = any(k.decode("latin1").lower() == "content-type" for k, v in headers)
+                if not has_ct:
+                    headers.append((b"content-type", b"application/json"))
             await send(message)
 
         try:
