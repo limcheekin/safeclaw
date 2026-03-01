@@ -13,7 +13,8 @@ class RewriteSSEMiddleware:
 
     async def __call__(self, scope, receive, send):
         if scope.get("type") == "http" and scope.get("method") == "POST" and scope.get("path") == "/sse":
-            scope["path"] = "/messages"
+            scope["path"] = "/messages/"
+            scope["raw_path"] = b"/messages/"
             
             # LocalAI drops the required session_id parameter dynamically sent in the SSE endpoint event. 
             # We intercept FastMCP's internal connection state to get the active session ID.

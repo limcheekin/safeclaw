@@ -112,3 +112,15 @@ This usually occurs if the SafeClaw server has not been updated with the LocalAI
 
 ### Error: Authentication/Invalid JWT
 If you encounter an authentication error, verify that the JWT token is valid, hasn't expired, and was signed correctly to match the `JWT_PUBLIC_KEY` configured in your SafeClaw deployment.
+
+### Error: "unsupported content type" during initialization
+If you see an error in the LocalAI console similar to:
+`Failed to connect to MCP server error=calling "initialize": sending "initialize": unsupported content type "" url="http://192.168.1.111:9994/sse"`
+
+This error has two root causes that the `RewriteSSEMiddleware` resolves:
+
+1. **Missing Content-Type header**: FastMCP's error-path responses (e.g., HTTP 400 for missing `session_id`) do not include a `Content-Type` header. LocalAI refuses to process responses without one. The middleware injects `Content-Type: application/json` into all responses that are missing it.
+
+2. **Starlette 307 redirect**: The middleware rewrites `POST /sse` → `POST /messages/`. If only the `path` was updated (without `raw_path`), Starlette would issue a 307 redirect (no trailing slash → trailing slash), resulting in another empty `Content-Type` response. The middleware now updates both `scope["path"]` and `scope["raw_path"]` to the correct `/messages/` path.
+
+Ensure you have the latest SafeClaw code and have restarted the MCP server.
