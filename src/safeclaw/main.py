@@ -1,17 +1,22 @@
 from safeclaw.mcp.server import mcp
-from starlette.middleware import Middleware
 
 # Expose ASGI app for uvicorn.
-# Use stateless streamable-http transport mounted at /sse:
-#   - LocalAI POSTs to http://<host>/sse and expects the JSON-RPC response
-#     directly in the HTTP response body (not via an SSE stream).
-#   - stateless_http=True means each POST creates a fresh transport session,
-#     so no GET /sse connection is needed and there is no session_id to track.
-#   - The old RewriteSSEMiddleware (path rewriting + session_id injection +
-#     body rewriting) is no longer required with this transport.
+# Uses stateless streamable-http transport at the standard /mcp endpoint.
+#
+# Why these options:
+#   transport='streamable-http': LocalAI expects JSON-RPC responses in the
+#     HTTP POST response body, not via a persistent SSE stream.
+#   stateless_http=True: Each POST is self-contained (no session persistence
+#     between requests). LocalAI does not send a Mcp-Session-Id header so
+#     stateful sessions would not work anyway.
+#   json_response=True: FastMCP's default requires the client to send
+#     'Accept: text/event-stream', which LocalAI does not include. Setting
+#     json_response=True switches to plain 'application/json' responses,
+#     avoiding the 406 Not Acceptable error.
 app = mcp.http_app(
     transport='streamable-http',
     stateless_http=True,
+    json_response=True,
 )
 
 def main():
