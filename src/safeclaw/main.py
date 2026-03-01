@@ -48,15 +48,31 @@ class RewriteSSEMiddleware:
                         scope["query_string"] = new_qs.encode("utf-8")
                         
         response_started = False
+        response_status = 0
+
         async def wrapped_send(message: dict):
-            nonlocal response_started
+            nonlocal response_started, response_status
             if message["type"] == "http.response.start":
                 response_started = True
-                headers = message.setdefault("headers", [])
-                has_ct = any(k.decode("latin1").lower() == "content-type" for k, v in headers)
-                if not has_ct:
-                    headers.append((b"content-type", b"application/json"))
-            await send(message)
+                response_status = message.get("status", 0)
+                # Rebuild headers: remove content-type and content-length so we control them
+                headers = [
+                    (k, v) for k, v in message.get("headers", [])
+                    if k.decode("latin1").lower() not in ("content-type", "content-length")
+                ]
+                headers.append((b"content-type", b"application/json"))
+                if response_status == 202:
+                    # Body will be replaced with `{}` (2 bytes)
+                    headers.append((b"content-length", b"2"))
+                message["headers"] = headers
+                await send(message)
+            elif message["type"] == "http.response.body" and response_status == 202:
+                # FastMCP returns plain-text "Accepted" on 202. LocalAI tries to parse
+                # the POST response body as JSON and fails with "invalid character 'A'".
+                # Replace the body with a valid empty JSON object so LocalAI can decode it.
+                await send({"type": "http.response.body", "body": b"{}", "more_body": False})
+            else:
+                await send(message)
 
         try:
             await self.app(scope, receive, wrapped_send)
@@ -67,7 +83,7 @@ class RewriteSSEMiddleware:
                 if scope.get("type") == "http":
                     if not response_started:
                         from starlette.responses import Response
-                        response = Response("Accepted despite closed stream", status_code=202)
+                        response = Response("{}", status_code=202, media_type="application/json")
                         await response(scope, receive, send)
                     else:
                         # Request is already streaming (e.g. GET /sse). Suppress the error cleanly.
