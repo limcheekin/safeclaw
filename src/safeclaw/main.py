@@ -11,7 +11,6 @@ from starlette.middleware import Middleware
 #     body rewriting) is no longer required with this transport.
 app = mcp.http_app(
     transport='streamable-http',
-    path='/sse',
     stateless_http=True,
 )
 

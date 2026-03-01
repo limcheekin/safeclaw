@@ -17,7 +17,7 @@ services:
       - cerbos
       - redis
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/sse"] # Check SSE endpoint or root
+      test: ["CMD", "curl", "-f", "http://localhost:8000/mcp"] # Check MCP streamable-http endpoint
       interval: 30s
       timeout: 10s
       retries: 3

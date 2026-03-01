@@ -1,6 +1,6 @@
 # LocalAI MCP Configuration Guide for SafeClaw
 
-This guide details how to configure LocalAI (running at `http://192.168.1.111:8880`) to use the SafeClaw MCP server (running at `http://192.168.1.111:9994/sse`) with JWT authentication.
+This guide details how to configure LocalAI (running at `http://192.168.1.111:8880`) to use the SafeClaw MCP server (running at `http://192.168.1.111:9994/mcp`) with JWT authentication.
 
 ## Prerequisites: JWT Authentication
 
@@ -27,6 +27,8 @@ To authenticate LocalAI with the MCP server, you must provide a valid JWT.
 
 LocalAI's MCP integration is configured inside the model's YAML file. Since you are using the `ibm-granite-4.0-h-tiny` model, create or edit the YAML configuration file for this model in your LocalAI models directory (e.g., `models/ibm-granite-4.0-h-tiny.yaml`).
 
+> **Note:** The SafeClaw MCP server uses the **streamable HTTP** transport at the `/mcp` endpoint. This means LocalAI communicates via standard HTTP POST requests and receives JSON-RPC responses directly in the HTTP response body — no persistent SSE connection is required.
+
 Here are two recommended setups depending on your needs:
 
 ### Option 1: Simple Tasks Configuration
@@ -41,7 +43,7 @@ mcp:
     {
       "mcpServers": {
         "safeclaw": {
-          "url": "http://192.168.1.111:9994/sse",
+          "url": "http://192.168.1.111:9994/mcp",
           "token": "<YOUR_GENERATED_JWT_TOKEN>"
         }
       }
@@ -65,7 +67,7 @@ mcp:
     {
       "mcpServers": {
         "safeclaw": {
-          "url": "http://192.168.1.111:9994/sse",
+          "url": "http://192.168.1.111:9994/mcp",
           "token": "<YOUR_GENERATED_JWT_TOKEN>"
         }
       }
@@ -98,29 +100,25 @@ curl http://192.168.1.111:8880/mcp/v1/chat/completions \
   }'
 ```
 
+You can also directly test the MCP endpoint:
+
+```bash
+curl -X POST http://192.168.1.111:9994/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <YOUR_GENERATED_JWT_TOKEN>" \
+  -d '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}},"id":1}'
+```
+
+A successful response will be a `200 OK` with a JSON-RPC result body.
+
 ### Expected Result
 
 If configured correctly, the model will access the SafeClaw MCP tools, process the request, and return a response detailing the tools it can use or performing a specific action based on the tools you prompt it to use.
 
 ## Troubleshooting
 
-### Error: "Method Not Allowed" during initialization
-If you see an error in the LocalAI console similar to:
-`Failed to connect to MCP server error=calling "initialize": sending "initialize": Method Not Allowed url="http://192.168.1.111:9994/sse"`
-
-This usually occurs if the SafeClaw server has not been updated with the LocalAI compatibility middleware. Ensure you have the latest SafeClaw code (which includes `RewriteSSEMiddleware`) and have restarted the MCP server. This middleware natively routes the `POST /sse` requests sent by LocalAI correctly.
-
 ### Error: Authentication/Invalid JWT
 If you encounter an authentication error, verify that the JWT token is valid, hasn't expired, and was signed correctly to match the `JWT_PUBLIC_KEY` configured in your SafeClaw deployment.
 
-### Error: "unsupported content type" during initialization
-If you see an error in the LocalAI console similar to:
-`Failed to connect to MCP server error=calling "initialize": sending "initialize": unsupported content type "" url="http://192.168.1.111:9994/sse"`
-
-This error has two root causes that the `RewriteSSEMiddleware` resolves:
-
-1. **Missing Content-Type header**: FastMCP's error-path responses (e.g., HTTP 400 for missing `session_id`) do not include a `Content-Type` header. LocalAI refuses to process responses without one. The middleware injects `Content-Type: application/json` into all responses that are missing it.
-
-2. **Starlette 307 redirect**: The middleware rewrites `POST /sse` → `POST /messages/`. If only the `path` was updated (without `raw_path`), Starlette would issue a 307 redirect (no trailing slash → trailing slash), resulting in another empty `Content-Type` response. The middleware now updates both `scope["path"]` and `scope["raw_path"]` to the correct `/messages/` path.
-
-Ensure you have the latest SafeClaw code and have restarted the MCP server.
+### Error: Connection Refused / Cannot Connect
+Ensure the SafeClaw MCP server is running and accessible at `http://192.168.1.111:9994`. Check the server logs for startup errors.
