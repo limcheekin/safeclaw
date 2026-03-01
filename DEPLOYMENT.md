@@ -26,7 +26,7 @@ Ensure your Cerbos policies (located in `./policies`) are accessible to the Cerb
 docker run -d --name cerbos-pdp \
   -p 3592:3592 -p 3593:3593 \
   -v $(pwd)/policies:/policies \
-  ghcr.io/cerbos/cerbos:0.34.0 \
+  ghcr.io/cerbos/cerbos:0.51.0 \
   server --set=storage.disk.directory=/policies \
          --set=server.httpListenAddr=:3592 \
          --set=server.grpcListenAddr=:3593
@@ -87,6 +87,10 @@ You will use the **private key** (`private.pem`) to cryptographically sign token
 - `MCP_SERVER_NAME`: Name of your MCP server instance. Default: `safeclaw-mcp`.
 - `MCP_SERVER_PORT`: Port to listen on. Default: `8000`.
 
+**Transport:** SafeClaw uses the [MCP Streamable HTTP](https://spec.modelcontextprotocol.io/specification/2025-03-26/basic/transports/#streamable-http) transport in stateless mode. Each JSON-RPC request is an independent HTTP POST and receives its response directly in the HTTP body. No persistent SSE connection or session tracking is required.
+
+**Endpoint:** `POST /mcp` (e.g., `http://<host>:8000/mcp`)
+
 ## 5. Deploying the SafeClaw Server
 
 Once your infrastructure is ready and your environment is configured, you can start the SafeClaw container.
@@ -129,7 +133,8 @@ cerbos test ./policies
 ## 7. Health Checks and Observability
 
 To ensure SafeClaw is operating correctly in production:
-- **App Health**: `curl -f http://localhost:8000/sse` (or you can use the appropriate root endpoint exposed by the MCP server).
+- **App Health**: `curl -X POST -H "Content-Type: application/json" -H "Accept: application/json" -d '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"healthcheck","version":"1.0"}},"id":1}' http://localhost:8000/mcp`  
+  A healthy response is `200 OK` with a JSON-RPC result containing `serverInfo`.
 - **Cerbos Health**: `curl -f http://<cerbos-host>:3592/_cerbos/health`
 - **Redis Health**: Use `redis-cli ping` to verify Redis connectivity.
 

@@ -94,7 +94,7 @@ curl http://192.168.1.111:8880/mcp/v1/chat/completions \
   -d '{
     "model": "ibm-granite-4.0-h-tiny",
     "messages": [
-      {"role": "user", "content": "What tools are available to you?"}
+      {"role": "user", "content": "What is the weather like in Kuala Lumpur according to the SafeClaw server?"}
     ],
     "temperature": 0.7
   }'
