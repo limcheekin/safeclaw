@@ -19,11 +19,12 @@ RUN pip install --no-cache-dir .[all,mcp]
 # Install the project
 COPY . .
 RUN pip install --no-cache-dir .
-RUN python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab')"
-
 # Create non-root user
 RUN useradd -m appuser && chown -R appuser /app
 USER appuser
+
+# Download NLTK data as appuser so it goes into /home/appuser/nltk_data
+RUN python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab')"
 
 EXPOSE 8000
 
