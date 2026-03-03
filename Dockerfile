@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY pyproject.toml README.md ./
 # We don't have a lock file yet, so install from pyproject.toml
 # Installing optional dependencies as well as numpy and certifi missing dependencies
-RUN pip install --no-cache-dir .[all] numpy certifi
+RUN pip install --no-cache-dir .[all,mcp] numpy certifi
 # Or explicitly install requirements generated
 # For this quickstart, we install the package in editable mode or just dependencies
 
